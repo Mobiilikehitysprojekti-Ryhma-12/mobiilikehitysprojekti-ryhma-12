@@ -25,6 +25,17 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Architecture (v0)
+
+The project uses Expo Router for navigation. UI screens live under `app/`.
+Business logic and data access are separated into services and models.
+
+- `app/` – screens and routing
+- `components/` – reusable UI components
+- `models/` – TypeScript domain models
+- `services/` – API and backend communication
+- `constants/` – theme and configuration
+
 ## Get a fresh project
 
 When you're ready, run:
