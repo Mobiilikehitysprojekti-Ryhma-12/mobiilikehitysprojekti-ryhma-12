@@ -6,6 +6,17 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { RepoProvider } from '@/services/leads/RepoProvider';
 
+/**
+ * RootLayout (Expo Router)
+ *
+ * Tämä on sovelluksen "juuri":
+ * - `RepoProvider` injektoi repositoryt (Fake/API) koko appiin (löyhä kytkentä).
+ * - `ThemeProvider` kytkee React Navigation -teeman (light/dark).
+ * - `Stack` määrittelee pääreitit (tabs + modal).
+ *
+ * Tärkeä periaate: Providerit pidetään täällä, jotta yksittäiset screenit pysyy yksinkertaisina.
+ */
+
 export const unstable_settings = {
   anchor: '(tabs)',
 };

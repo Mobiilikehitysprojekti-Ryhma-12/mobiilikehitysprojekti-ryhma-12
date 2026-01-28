@@ -25,16 +25,43 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Architecture (v0)
+## Sprint 1 demo (QuoteFlow)
 
-The project uses Expo Router for navigation. UI screens live under `app/`.
-Business logic and data access are separated into services and models.
+This repo contains a first demo version with:
 
-- `app/` – screens and routing
-- `components/` – reusable UI components
-- `models/` – TypeScript domain models
-- `services/` – API and backend communication
-- `constants/` – theme and configuration
+- **Inbox** (tab `app/(tabs)/index.tsx`) showing a list of leads
+- **Search + status filter** (client-side)
+- **UI states**: loading (skeleton), empty (no items / no results), error (retry)
+- **Lead detail** route: `app/lead/[id].tsx`
+
+### Demo checklist
+
+1. Open app → Inbox shows skeleton → list appears
+2. Type in search or change status → list filters → empty state appears when no matches
+3. Tap an item → opens lead detail
+
+### Data source (Fake vs API)
+
+We use a Repository interface + Context “DI” (Hilt mindset in RN): UI never calls the low-level api client directly.
+
+- Switch repository in `services/leads/RepoProvider.tsx` (`USE_FAKE_REPO`)
+   - `true` = `FakeLeadsRepository` (demo data, reliable for videos)
+   - `false` = `ApiLeadsRepository` (expects `/leads` endpoints)
+
+### Error state demo (optional)
+
+To force an error state for video/demo, set `SIMULATE_ERROR = true` in `services/apiClient.ts` and use API repo (`USE_FAKE_REPO = false`).
+
+## Architecture (Repository + Context DI)
+
+High-level folder map:
+
+- `app/` – screens and routing (Expo Router)
+- `components/ui/` – reusable presentational UI building blocks
+- `models/` – domain models (e.g. `Lead`, `LeadStatus`)
+- `services/` – data access (api client + repositories)
+- `state/` – ViewModel hooks (e.g. inbox UI state + filters)
+- `hooks/`, `constants/` – theme hooks + tokens
 
 ## Get a fresh project
 

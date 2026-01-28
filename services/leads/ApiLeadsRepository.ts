@@ -20,7 +20,13 @@ export class ApiLeadsRepository implements LeadsRepository {
     return await getJson<Lead[]>('/leads');
   }
 
-  /** Oletus: GET /leads/:id -> Lead */
+  /**
+   * Oletus: GET /leads/:id -> Lead
+   *
+   * Huom: Repository-rajapinta sallii `null` ("ei löytynyt").
+   * Tässä sprintissä `getJson` heittää virheen kaikista non-2xx vastauksista,
+   * joten "404 -> null" -mapitus voidaan lisätä myöhemmin kun API-spec varmistuu.
+   */
   async getLeadById(id: string): Promise<Lead | null> {
     // Miksi encodeURIComponent: jos id sisältää erikoismerkkejä, URL pysyy validina.
     return await getJson<Lead>(`/leads/${encodeURIComponent(id)}`);
