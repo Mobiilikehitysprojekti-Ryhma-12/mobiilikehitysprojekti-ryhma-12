@@ -11,7 +11,20 @@
  * Huom: tämäkin ruutu käyttää repositorya Contextista.
  */
 
-import { useLocalSearchParams } from 'expo-router';
+/**
+ *
+ * Vastuut:
+ * - Hakee liidin repositoryn kautta (Fake/API valitaan RepoProviderissa).
+ * - Näyttää lataus-, virhe- ja "ei löytynyt" -tilat.
+ * - Delegoi varsinaisen UI-renderöinnin LeadDetailView-komponentille.
+ *
+ * Miksi näin:
+ * - UI pysyy ohuena ja uudelleenkäytettävänä.
+ * - Datalähde on vaihdettavissa RepoProviderin lipulla ilman UI-muutoksia.
+ */
+
+
+import { useLocalSearchParams, Stack } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
@@ -22,6 +35,7 @@ import { InboxSkeleton } from '@/components/ui/InboxSkeleton';
 import type { Lead } from '@/models/Lead';
 import { leadStatusLabel } from '@/models/Lead';
 import { useLeadsRepo } from '@/services/leads/RepoProvider';
+import { LeadDetailView } from '@/components/ui/LeadDetailView';
 
 export default function LeadDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -63,31 +77,57 @@ export default function LeadDetailScreen() {
     load();
   }, [load]);
 
-  if (isLoading) return <InboxSkeleton rows={5} />;
-  if (errorMessage) return <ErrorCard message={errorMessage} onRetry={load} />;
-  if (!lead) return <ErrorCard message="Liidiä ei löytynyt" onRetry={load} />;
+  const interimTitle = id ? `Lead ${id}` : 'Lead';
+
+
+  if (isLoading) {
+    return (
+      <>
+        <Stack.Screen options={{ title: interimTitle }} />
+        <InboxSkeleton rows={5} />
+      </>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <>
+        <Stack.Screen options={{ title: interimTitle }} />
+        <ErrorCard message={errorMessage} onRetry={load} />
+      </>
+    );
+  }
+
+  if (!lead) {
+    return (
+      <>
+        <Stack.Screen options={{ title: interimTitle }} />
+        <ErrorCard message="Liidiä ei löytynyt" onRetry={load} />
+      </>
+    );
+  }
+
 
   return (
-    <ThemedView style={styles.screen}>
-      <ThemedText type="title">{lead.title}</ThemedText>
-      <ThemedText style={styles.meta}>{leadStatusLabel(lead.status)}</ThemedText>
-      <ThemedText style={styles.meta}>{lead.createdAt}</ThemedText>
+    <>
+      {/* Kun lead on tiedossa, päivitetään otsikko tarkasti lead-id:n mukaan.
+         Halutessasi voit näyttää otsikossa myös nimen: `title: lead.title` */}
+      <Stack.Screen options={{ title: `Lead ${lead.id}` }} />
 
-      {lead.customerName ? <ThemedText>Asiakas: {lead.customerName}</ThemedText> : null}
-      {lead.address ? <ThemedText>Osoite: {lead.address}</ThemedText> : null}
-      {lead.service ? <ThemedText>Palvelu: {lead.service}</ThemedText> : null}
-      {lead.description ? <ThemedText>{lead.description}</ThemedText> : null}
-    </ThemedView>
+      <ThemedView style={styles.screen}>
+        <LeadDetailView lead={lead} />
+      </ThemedView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: 16,
-    gap: 10,
+    //padding: 16,
+    //gap: 10,
   },
-  meta: {
-    opacity: 0.8,
-  },
+  //meta: {
+  //  opacity: 0.8,
+  //},
 });
