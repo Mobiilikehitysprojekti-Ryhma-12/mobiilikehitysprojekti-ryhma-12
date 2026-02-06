@@ -9,11 +9,11 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export function EmptyState({
   title,
@@ -26,28 +26,21 @@ export function EmptyState({
   cta: string;
   onCta: () => void;
 }) {
-  const borderColor = useThemeColor({}, 'icon');
-
   return (
-    <ThemedView style={[styles.wrap, { borderColor }]}>
+    <Card style={styles.wrap}>
       <ThemedText type="title">{title}</ThemedText>
       <ThemedText style={styles.sub}>{subtitle}</ThemedText>
 
-      <Pressable accessibilityRole="button" onPress={onCta} style={[styles.btn, { borderColor }]}>
-        <ThemedText type="defaultSemiBold">{cta}</ThemedText>
-      </Pressable>
+      <Button title={cta} onPress={onCta} style={styles.btn} />
 
       <View style={styles.spacer} />
-    </ThemedView>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
     margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
     gap: 10,
   },
   sub: {
@@ -55,10 +48,6 @@ const styles = StyleSheet.create({
   },
   btn: {
     marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
     alignSelf: 'flex-start',
   },
   spacer: {

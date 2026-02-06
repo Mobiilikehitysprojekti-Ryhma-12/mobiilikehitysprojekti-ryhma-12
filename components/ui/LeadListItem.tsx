@@ -12,7 +12,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Card } from '@/components/ui/Card';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import type { Lead } from '@/models/Lead';
 import { leadStatusLabel } from '@/models/Lead';
@@ -23,7 +23,7 @@ export function LeadListItem({ lead, onPress }: { lead: Lead; onPress: () => voi
 
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.outer}>
-      <ThemedView style={[styles.card, { borderColor }]}>
+      <Card style={[styles.card, { borderColor }]}>
         <View style={styles.top}>
           <ThemedText type="defaultSemiBold" numberOfLines={1} style={{ flex: 1 }}>
             {lead.title}
@@ -38,7 +38,7 @@ export function LeadListItem({ lead, onPress }: { lead: Lead; onPress: () => voi
           {lead.service ? `${lead.service} • ` : ''}
           {lead.createdAt}
         </ThemedText>
-      </ThemedView>
+      </Card>
     </Pressable>
   );
 }
@@ -50,7 +50,6 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 14,
-    borderRadius: 12,
     borderWidth: 1,
     gap: 8,
   },

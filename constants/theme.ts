@@ -51,3 +51,16 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const Spacing = {
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 24,
+} as const;
+
+export const Radii = {
+  sm: 10,
+  md: 12,
+  pill: 999,
+} as const;

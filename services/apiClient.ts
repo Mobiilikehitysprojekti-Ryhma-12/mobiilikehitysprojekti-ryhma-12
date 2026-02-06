@@ -11,6 +11,8 @@
  * - SIMULATE_ERROR=true -> virhetila + Retry on helppo demonstroida.
  */
 
+import { getDebugFlags } from '@/services/debugFlags';
+
 // TODO: lisää oikea base URL, kun backend on varmistunut.
 const BASE_URL = '';
 
@@ -18,7 +20,13 @@ const BASE_URL = '';
 const SIMULATE_ERROR = false;
 
 export async function getJson<T>(path: string): Promise<T> {
-  if (SIMULATE_ERROR) {
+  const f = __DEV__ ? getDebugFlags() : { simulateError: false, simulateOffline: false };
+
+  if (f.simulateOffline) {
+    throw new Error('OFFLINE_SIMULATED');
+  }
+
+  if (SIMULATE_ERROR || f.simulateError) {
     throw new Error('Simuloitu API-virhe (SIMULATE_ERROR=true)');
   }
 
