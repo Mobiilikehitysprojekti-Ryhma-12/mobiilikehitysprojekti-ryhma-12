@@ -1,13 +1,16 @@
 // components/ui/LeadDetailView.tsx
 
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import type { Lead } from '@/models/Lead';
 import { leadStatusLabel } from '@/models/Lead';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
 
 /**
  * LeadDetailView (presentational)
@@ -15,6 +18,7 @@ import { StyleSheet, View } from 'react-native';
  * Tarkoitus:
  * - Näyttää liidin peruskentät (nimi/palvelu/status/osoite/aika/kuvaus)
  *   UI-tyylillä, joka vastaa listauksen ilmettä (kortti + status-badge).
+ * - Tarjoaa "Luo tarjous" -painikkeen siirtymiseen Quote Builder -näkymään.
  * - Ei hae dataa itse -> saa Lead-propin parentilta (screen / viewmodel).
  *
  * Miksi näin:
@@ -22,8 +26,19 @@ import { StyleSheet, View } from 'react-native';
  *   tämä komponentti vain renderöi. Helpottaa testattavuutta ja uudelleenkäyttöä.
  */
 export function LeadDetailView({ lead }: { lead: Lead }) {
+    const router = useRouter();
     const borderColor = useThemeColor({}, 'icon');
     const tintColor = useThemeColor({}, 'tint');
+
+    const handleCreateQuote = () => {
+        // Navigoidaan Quote Builder -näkymään samasta lead-parametrista
+        // Välitetään lead-nimi query parametrina jotta sitä voidaan näyttää otsikossa
+        router.push({
+            pathname: `/lead/[id]/quote` as const,
+            params: { id: lead.id, leadTitle: lead.title },
+        });
+    };
+
     return (
         <ThemedView style={styles.screen}>
             {/* Kortti: linjassa listakomponentin kanssa (ohut reunus, pehmeä radius) */}
@@ -58,6 +73,14 @@ export function LeadDetailView({ lead }: { lead: Lead }) {
                     <ThemedText style={styles.description}>{lead.description}</ThemedText>
                 ) : null}
             </Card>
+
+            {/* Toimintopainikkeet */}
+            <Card style={styles.actionCard}>
+                <Button
+                    title="Luo tarjous"
+                    onPress={handleCreateQuote}
+                />
+            </Card>
         </ThemedView>
     );
 }
@@ -72,6 +95,11 @@ const styles = StyleSheet.create({
         padding: 14,
         borderWidth: 1,
         gap: 10,
+    },
+    actionCard: {
+        padding: 14,
+        gap: 10,
+        marginTop: 8,
     },
     top: {
         flexDirection: 'row',
