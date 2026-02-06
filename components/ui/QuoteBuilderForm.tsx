@@ -2,24 +2,29 @@
  * QuoteBuilderForm -komponentti
  *
  * Tarkoitus:
- * - Näyttää lomakkeen tarjouksen luomiseen (kuvaus, hinta, ehdot jne.)
+ * - Orkestroi tarjouksen luomisen lomakkeen
  * - Validoi syötteen
+ * - Autotallentaa luonnoksen AsyncStorageen (debounce)
+ * - Hallinnoi edit/preview -tilat
  * - Delegoi varsinaisen tarjouksen luomisen parentille (screen / viewmodel)
  *
  * Miksi näin:
- * - Erottaa UI-renderöinnin datavirasta ja virheenkäsittelystä
- * - Voidaan uudelleenkäyttää eri yhteyksissä
+ * - Keskittyy logiikkaan (validaatio, autosave, state management)
+ * - Delegoi UI-renderöinnin lapsikomponenteille (QuoteFormFields, QuotePreview)
  * - Helppo testata ja muokata ilman data-kerroksen logiikkaa
+ * - Autosave parantaa käyttäjäkokemusta (varmuuskopio lomakkeen sisällöstä)
  */
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import { QuoteFormFields } from '@/components/ui/QuoteFormFields';
+import { QuotePreview } from '@/components/ui/QuotePreview';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import type { QuoteFormData } from '@/models/Quote';
-import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 /**
@@ -59,6 +64,82 @@ export function QuoteBuilderForm({
   });
 
   const [errors, setErrors] = useState<Partial<QuoteFormData>>({});
+  const [savedStatus, setSavedStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [showPreview, setShowPreview] = useState(false);
+  
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const draftKeyRef = useRef<string>(`quoteDraft:${leadId}`);
+
+  /**
+   * Lataa luonnos AsyncStoragesta komponentin latautuessa.
+   *
+   * Miksi täällä:
+   * - Käyttäjä voi palata keskeneräiseen tarjoukseen
+   * - Vähennetään tiedon häviö
+   */
+  useEffect(() => {
+    const loadDraft = async () => {
+      try {
+        const draftKey = draftKeyRef.current;
+        const savedDraft = await AsyncStorage.getItem(draftKey);
+        
+        if (savedDraft) {
+          const draftData = JSON.parse(savedDraft) as QuoteFormData;
+          setFormData(draftData);
+        }
+      } catch (error) {
+        console.error('QuoteBuilderForm: luonnoksen lataaminen epäonnistui', error);
+      }
+    };
+
+    loadDraft();
+  }, [leadId]);
+
+  /**
+   * Autotallentaa lomakkeen sisällön AsyncStorageen (debounce 1000ms).
+   *
+   * Miksi debounce:
+   * - Vähennetään AsyncStorage -kirjoitusoperaatioita
+   * - Parempi suorituskyky
+   * - Käyttäjä näkee "tallennettu" -indikaation vain kerran kirjoitusta kohti
+   */
+  const autoSaveDraft = (data: QuoteFormData) => {
+    // Peruuta edellinen timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Aseta "tallentaa" -tila
+    setSavedStatus('saving');
+
+    // Aseta uusi timeout
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const draftKey = draftKeyRef.current;
+        await AsyncStorage.setItem(draftKey, JSON.stringify(data));
+        setSavedStatus('saved');
+
+        // Piiloita "tallennettu" -viesti 2 sekunnin jälkeen
+        setTimeout(() => {
+          setSavedStatus('idle');
+        }, 2000);
+      } catch (error) {
+        console.error('QuoteBuilderForm: automaattinen tallennus epäonnistui', error);
+        setSavedStatus('idle');
+      }
+    }, 1000);
+  };
+
+  /**
+   * Poista autosave-timeout kun komponentti poistetaan.
+   */
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /**
    * Validoidaan lomakkeen tiedot ennen lähettämistä.
@@ -101,150 +182,152 @@ export function QuoteBuilderForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  /**
+   * Tyhjentää tallennetun luonnoksen AsyncStoragesta ja resetoi lomakkeen alkuperäiseen tilaan.
+   *
+   */
+  const clearDraft = async () => {
+    try {
+      await AsyncStorage.removeItem(draftKeyRef.current);
+      setFormData({
+        leadId,
+        description: '',
+        price: '',
+        currency: 'EUR',
+        quoteValidityDays: '30',
+        estimatedStartDate: '',
+        notes: '',
+      });
+      setErrors({});
+      setSavedStatus('idle');
+    } catch (error) {
+      console.error('QuoteBuilderForm: luonnoksen tyhjentäminen epäonnistui', error);
+    }
+  };
+
+  /**
+   * Käsittelee yksittäisen kentän muutoksen ja laukaisee autosaven.
+   */
+  const handleFieldChange = (field: keyof QuoteFormData, value: string) => {
+    const newData = { ...formData, [field]: value };
+    setFormData(newData);
+    autoSaveDraft(newData);
+  };
+
+  /**
+   * Poistaa validointivirheen yksittäiseltä kentältä.
+   */
+  const handleErrorClear = (field: keyof QuoteFormData) => {
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  /**
+   * Validoidaan lomake ja näytä preview-näkymä.
+   * Käyttäjä voi tästä peruuttaa ja muokata, tai lähettää tarjouksen.
+   */
+  const handleSubmit = () => {
     if (!validateForm()) {
       return;
     }
+    // Näytä preview-näkymä
+    setShowPreview(true);
+  };
 
+  /**
+   * Lähettää tarjouksen previewistä.
+   * Kutsutaan vasta kun käyttäjä on vahvistanut yhteenvedon.
+   */
+  const handleConfirmSubmit = async () => {
     try {
       await onSubmit(formData);
+      // Tyhjennä luonnos onnistuneen lähetyksen jälkeen
+      await AsyncStorage.removeItem(draftKeyRef.current);
+      setShowPreview(false);
     } catch (error) {
       console.error('QuoteBuilderForm: lomakkeen lähetys epäonnistui', error);
+      setShowPreview(false);
     }
   };
 
   return (
     <ThemedView style={styles.container}>
-      {/* Otsikko */}
-      <Card style={styles.card}>
-        <ThemedText type="title">Uusi tarjous</ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Luo tarjous liidille {leadTitle || leadId}
-        </ThemedText>
-      </Card>
+      {!showPreview ? (
+        // === EDITOINTIMUOTO ===
+        <>
+          {/* Autosave-indikaattori */}
+          {savedStatus !== 'idle' && (
+            <Card style={[styles.card, styles.saveIndicator]}>
+              <ThemedText style={{ fontSize: 12, opacity: 0.8 }}>
+                {savedStatus === 'saving' ? '💾 Tallennetaan...' : '✓ Luonnos tallennettu'}
+              </ThemedText>
+            </Card>
+          )}
 
-      {/* Viesti-kenttä (pakollinen) — minimipaketti edellyttää viestiä asiakkaalle */}
-      <Card style={styles.card}>
-        <ThemedText type="subtitle">Viesti asiakkaalle *</ThemedText>
-        <Input
-          placeholder="Esim: Kylpyhuoneen siivous sisältää lattian, seinien ja laitteiden puhdistuksen."
-          value={formData.description}
-          onChangeText={(text) => {
-            setFormData({ ...formData, description: text });
-            if (errors.description) {
-              setErrors({ ...errors, description: undefined });
-            }
-          }}
-          multiline
-          numberOfLines={4}
-          editable={!isSubmitting}
-        />
-        {errors.description ? (
-          <ThemedText style={[styles.errorText, { color: tintColor }]}>
-            {errors.description}
-          </ThemedText>
-        ) : null}
-      </Card>
+          {/* Otsikko */}
+          <Card style={styles.card}>
+            <View style={styles.headerRow}>
+              <View style={{ flex: 1 }}>
+                <ThemedText type="title">Uusi tarjous</ThemedText>
+                <ThemedText style={styles.subtitle}>
+                  Luo tarjous liidille {leadTitle || leadId}
+                </ThemedText>
+              </View>
+              <Button
+                title="Tyhjennä"
+                onPress={clearDraft}
+                disabled={isSubmitting}
+                style={styles.clearDraftButton}
+              />
+            </View>
+          </Card>
 
-      {/* Hinta-kenttä — minimipaketti edellyttää hintaa */}
-      <Card style={styles.card}>
-        <ThemedText type="subtitle">Hinta *</ThemedText>
-        <View style={styles.priceRow}>
-          <Input
-            placeholder="Esim: 1500"
-            value={formData.price}
-            onChangeText={(text) => {
-              setFormData({ ...formData, price: text });
-              if (errors.price) {
-                setErrors({ ...errors, price: undefined });
-              }
-            }}
-            keyboardType="decimal-pad"
-            style={styles.priceInput}
-            editable={!isSubmitting}
+          {/* Lomakekentät */}
+          <QuoteFormFields
+            formData={formData}
+            errors={errors}
+            isSubmitting={isSubmitting}
+            onFieldChange={handleFieldChange}
+            onErrorClear={handleErrorClear}
           />
-          <View style={styles.currencyBadge}>
-            <ThemedText>{formData.currency}</ThemedText>
-          </View>
-        </View>
-        {errors.price ? (
-          <ThemedText style={[styles.errorText, { color: tintColor }]}>
-            {errors.price}
-          </ThemedText>
-        ) : null}
-      </Card>
 
-      {/* Arvioitu aloituspäivä-kenttä (pakollinen) — minimipaketti edellyttää aloituspäivää */}
-      <Card style={styles.card}>
-        <ThemedText type="subtitle">Arvioitu aloituspäivä *</ThemedText>
-        <Input
-          placeholder="Esim: 2026-02-15"
-          value={formData.estimatedStartDate}
-          onChangeText={(text) => {
-            setFormData({ ...formData, estimatedStartDate: text });
-            if (errors.estimatedStartDate) {
-              setErrors({ ...errors, estimatedStartDate: undefined });
-            }
-          }}
-          editable={!isSubmitting}
-        />
-        {errors.estimatedStartDate ? (
-          <ThemedText style={[styles.errorText, { color: tintColor }]}>
-            {errors.estimatedStartDate}
-          </ThemedText>
-        ) : null}
-      </Card>
+          {/* Toimintopainikkeet */}
+          <Card style={[styles.card, styles.buttonRow]}>
+            <Button
+              title="Peruuta"
+              onPress={onCancel}
+              disabled={isSubmitting}
+              style={styles.cancelButton}
+            />
+            <Button
+              title={isSubmitting ? 'Tarkistetaan...' : 'Tallenna tarjous'}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+              loading={isSubmitting}
+            />
+          </Card>
+        </>
+      ) : (
+        // === PREVIEW-MUOTO ===
+        <>
+          <QuotePreview formData={formData} />
 
-      {/* Tarjouksen voimassaoloaika-kenttä (valinnainen) */}
-      <Card style={styles.card}>
-        <ThemedText type="subtitle">Tarjouksen voimassaoloaika (päivinä)</ThemedText>
-        <Input
-          placeholder="Esim: 30"
-          value={formData.quoteValidityDays}
-          onChangeText={(text) => {
-            setFormData({ ...formData, quoteValidityDays: text });
-            if (errors.quoteValidityDays) {
-              setErrors({ ...errors, quoteValidityDays: undefined });
-            }
-          }}
-          keyboardType="number-pad"
-          editable={!isSubmitting}
-        />
-        {errors.quoteValidityDays ? (
-          <ThemedText style={[styles.errorText, { color: tintColor }]}>
-            {errors.quoteValidityDays}
-          </ThemedText>
-        ) : null}
-      </Card>
-
-      {/* Lisäehdot-kenttä */}
-      <Card style={styles.card}>
-        <ThemedText type="subtitle">Lisäehdot / huomautukset</ThemedText>
-        <Input
-          placeholder="Esim: Sisältää asennuksen..."
-          value={formData.notes}
-          onChangeText={(text) => setFormData({ ...formData, notes: text })}
-          multiline
-          numberOfLines={3}
-          editable={!isSubmitting}
-        />
-      </Card>
-
-      {/* Toimintopainikkeet */}
-      <Card style={[styles.card, styles.buttonRow]}>
-        <Button
-          title="Peruuta"
-          onPress={onCancel}
-          disabled={isSubmitting}
-          style={styles.cancelButton}
-        />
-        <Button
-          title={isSubmitting ? 'Luodaan...' : 'Tallenna tarjous'}
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-          loading={isSubmitting}
-        />
-      </Card>
+          {/* Preview-muodon painikkeet */}
+          <Card style={[styles.card, styles.buttonRow]}>
+            <Button
+              title="Takaisin"
+              onPress={() => setShowPreview(false)}
+              disabled={isSubmitting}
+              style={styles.cancelButton}
+            />
+            <Button
+              title={isSubmitting ? 'Lähetetään...' : 'Lähetä tarjous'}
+              onPress={handleConfirmSubmit}
+              disabled={isSubmitting}
+              loading={isSubmitting}
+            />
+          </Card>
+        </>
+      )}
     </ThemedView>
   );
 }
@@ -258,29 +341,20 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 8,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  clearDraftButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    opacity: 0.7,
+  },
   subtitle: {
     opacity: 0.7,
     fontSize: 13,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
-  },
-  priceInput: {
-    flex: 1,
-  },
-  currencyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 4,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -290,5 +364,10 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     opacity: 0.6,
+  },
+  saveIndicator: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+    paddingVertical: 12,
   },
 });

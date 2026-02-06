@@ -7,12 +7,14 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { initDebugFlags } from '@/services/debugFlags';
 import { RepoProvider } from '@/services/leads/RepoProvider';
+import { QuoteProvider } from '@/services/quotes/QuoteProvider';
 
 /**
  * RootLayout (Expo Router)
  *
  * Tämä on sovelluksen "juuri":
- * - `RepoProvider` injektoi repositoryt (Fake/API) koko appiin (löyhä kytkentä).
+ * - `RepoProvider` injektoi leads-repositoryt (Fake/API) koko appiin (löyhä kytkentä).
+ * - `QuoteProvider` injektoi quotes-repositoryt (Fake/API) koko appiin.
  * - `ThemeProvider` kytkee React Navigation -teeman (light/dark).
  * - `Stack` määrittelee pääreitit (tabs + modal).
  *
@@ -32,13 +34,16 @@ export default function RootLayout() {
 
   return (
     <RepoProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <QuoteProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </QuoteProvider>
     </RepoProvider>
   );
 }
+

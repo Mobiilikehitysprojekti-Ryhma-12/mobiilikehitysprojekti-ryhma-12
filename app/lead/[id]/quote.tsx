@@ -7,10 +7,12 @@
  * - Näyttää tarjouksen luomisen lomakkeen
  * - Validoi käyttäjän syöte
  * - Tarjoaa loading / error / success -tilat
+ * - Kutsuu repo.createQuote() tarjouksen tallentamiseen
  *
  * Miksi näin:
  * - Lead detailin yhteydessä voidaan heti luoda tarjous
- * - Datalähde on vaihdettavissa RepoProviderin kautta ilman UI-muutoksia
+ * - Datalähde on vaihdettavissa QuoteProvider:in kautta ilman UI-muutoksia
+ * - Tarjouksen luominen päivittää liidin statuksen automaattisesti
  */
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -20,16 +22,15 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ErrorCard, QuoteBuilderForm } from '@/components/ui';
 import type { QuoteFormData } from '@/models/Quote';
+import { useQuotesRepo } from '@/services/quotes/QuoteProvider';
 
 export default function QuoteBuilderScreen() {
   const { id: leadId, leadTitle } = useLocalSearchParams<{ id?: string; leadTitle?: string }>();
   const router = useRouter();
+  const quotesRepo = useQuotesRepo();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // TODO: Kun Quote-repositorio luodaan, integroidaan se tähän
-  // const repo = useQuotesRepo();
 
   const handleSubmit = async (formData: QuoteFormData) => {
     // Guard: jos lead-id puuttuu, ei jatketa
@@ -42,11 +43,12 @@ export default function QuoteBuilderScreen() {
     setErrorMessage(null);
 
     try {
-      // TODO: Integroidaan repo.createQuote(leadId, formData)
-      // const newQuote = await repo.createQuote(leadId, formData);
+      // Luo tarjous repositoion kautta
+      // - Tallentaa tarjouksen paikallisesti/API:ssa
+      // - Päivittää liidin statuksen 'quoted':ksi
+      const newQuote = await quotesRepo.createQuote(formData);
       
-      // Simuloidaan onnistunut lähetys
-      console.log('Tarjous luotiin:', formData);
+      console.log('Tarjous luotiin:', newQuote);
 
       // Onnistumisen jälkeen navigoidaan takaisin lead-detailiin
       router.back();

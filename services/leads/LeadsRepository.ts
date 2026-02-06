@@ -6,7 +6,7 @@
  * - Voidaan vaihtaa toteutus (Fake -> API) ilman että ruudut tai komponentit muuttuvat.
  */
 
-import type { Lead } from '@/models/Lead';
+import type { Lead, LeadStatus } from '@/models/Lead';
 
 export interface LeadsRepository {
   /**
@@ -23,4 +23,14 @@ export interface LeadsRepository {
    * Palautetaan `null`, jos liidiä ei löydy.
    */
   getLeadById(id: string): Promise<Lead | null>;
+
+  /**
+   * Päivittää liidin statuksen.
+   *
+   * Kutsutaan esim. kun tarjous luodaan ja liidi pitää merkitä 'quoted':ksi.
+   *
+   * @param leadId - Liidin ID
+   * @param status - Uusi status
+   */
+  updateLeadStatus(leadId: string, status: LeadStatus): Promise<void>;
 }

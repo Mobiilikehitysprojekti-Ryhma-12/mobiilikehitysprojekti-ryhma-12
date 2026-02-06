@@ -17,15 +17,18 @@
  * - Hakee liidin repositoryn kautta (Fake/API valitaan RepoProviderissa).
  * - Näyttää lataus-, virhe- ja "ei löytynyt" -tilat.
  * - Delegoi varsinaisen UI-renderöinnin LeadDetailView-komponentille.
+ * - Päivittää liidin tiedot kun näkymä tulee takaisin fokukseen (esim. quote luomisen jälkeen).
  *
  * Miksi näin:
  * - UI pysyy ohuena ja uudelleenkäytettävänä.
  * - Datalähde on vaihdettavissa RepoProviderin lipulla ilman UI-muutoksia.
+ * - useFocusEffect varmistaa, että liidin status päivittyy kun palaamme quote-näkymästä.
  */
 
 
+import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
@@ -71,9 +74,17 @@ export default function LeadDetailScreen() {
     }
   }, [id, repo]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  /**
+   * Päivitä liidin tiedot kun näkymä tulee fokukseen.
+   * 
+   * Käyttötapaus: Kun käyttäjä luoo tarjouksen ja palaa takaisin,
+   * liidin status päivittyy "new" -> "quoted" välittömästi.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const interimTitle = id ? `Lead ${id}` : 'Lead';
 

@@ -7,6 +7,9 @@
  */
 
 export type Quote = {
+  /** Tarjouksen uniikki ID */
+  id: string;
+
   /** Liittyvän liidin ID */
   leadId: string;
 
@@ -27,6 +30,9 @@ export type Quote = {
 
   /** Lisäehdot/huomautukset */
   notes?: string;
+
+  /** ISO-muotoinen luomispäivämäärä ja -aika */
+  createdAt: string;
 };
 
 /**
