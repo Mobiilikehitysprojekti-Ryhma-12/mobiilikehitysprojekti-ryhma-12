@@ -5,16 +5,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import {
-    getDebugFlags,
-    resetDebugFlags,
-    setDebugFlags,
-    subscribeDebugFlags,
-} from '@/services/debugFlags';
+import { getDebugFlags, resetDebugFlags, setDebugFlags, subscribeDebugFlags } from '@/services/debugFlags';
 import { clearLeadsCache, loadCachedLeads } from '@/services/leads/leadsCache';
 
-export default function DebugScreen() {
-  const [flags, setFlags] = useState(getDebugFlags());
+export default function DebugTab() {
+  const [flags, setFlagsState] = useState(getDebugFlags());
   const [cacheItemsCount, setCacheItemsCount] = useState<number | null>(null);
   const [cacheLastSynced, setCacheLastSynced] = useState<string | null>(null);
 
@@ -26,7 +21,7 @@ export default function DebugScreen() {
 
   useEffect(() => {
     if (!__DEV__) return;
-    return subscribeDebugFlags(setFlags);
+    return subscribeDebugFlags(setFlagsState);
   }, []);
 
   useEffect(() => {
@@ -48,22 +43,21 @@ export default function DebugScreen() {
     <ThemedView style={styles.screen}>
       <ThemedText type="title">Debug</ThemedText>
 
-      <Card style={styles.statusCard}>
+      <Card style={styles.card}>
         <ThemedText type="subtitle">{anyEnabled ? 'Simulaatio PÄÄLLÄ' : 'Simulaatio pois päältä'}</ThemedText>
-        <ThemedText style={styles.statusLine}>
-          SIMULATE_ERROR: {String(flags.simulateError)}
-        </ThemedText>
-        <ThemedText style={styles.statusLine}>
-          SIMULATE_OFFLINE: {String(flags.simulateOffline)}
-        </ThemedText>
+
+        <Row label="SIMULATE_ERROR" value={flags.simulateError} onChange={(v) => setDebugFlags({ simulateError: v })} />
+        <Row
+          label="SIMULATE_OFFLINE"
+          value={flags.simulateOffline}
+          onChange={(v) => setDebugFlags({ simulateOffline: v })}
+        />
 
         <View style={styles.divider} />
 
         <ThemedText type="subtitle">Cache status</ThemedText>
-        <ThemedText style={styles.statusLine}>
-          Cached leads: {cacheItemsCount === null ? '…' : `${cacheItemsCount} items`}
-        </ThemedText>
-        <ThemedText style={styles.statusLine}>Last synced: {cacheLastSynced ?? '—'}</ThemedText>
+        <ThemedText style={styles.meta}>Cached leads: {cacheItemsCount === null ? '…' : `${cacheItemsCount} items`}</ThemedText>
+        <ThemedText style={styles.meta}>Last synced: {cacheLastSynced ?? '—'}</ThemedText>
 
         <View style={styles.actionsRow}>
           <Button title="Reset debug flags" onPress={() => resetDebugFlags()} style={styles.actionBtn} />
@@ -79,20 +73,7 @@ export default function DebugScreen() {
         </View>
       </Card>
 
-      <Row
-        label="SIMULATE_ERROR"
-        value={flags.simulateError}
-        onChange={(v) => setDebugFlags({ simulateError: v })}
-      />
-      <Row
-        label="SIMULATE_OFFLINE"
-        value={flags.simulateOffline}
-        onChange={(v) => setDebugFlags({ simulateOffline: v })}
-      />
-
-      <ThemedText style={styles.hint}>
-        Vinkki: kytke SIMULATE_ERROR päälle ja palaa Inboxiin → ErrorCard + Retry näkyy varmasti.
-      </ThemedText>
+      <ThemedText style={styles.hint}>Demo: täytä cache kerran online → kytke SIMULATE_OFFLINE → palaa Inboxiin.</ThemedText>
     </ThemedView>
   );
 }
@@ -111,16 +92,21 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  statusCard: {
+  card: {
     marginTop: 16,
-    gap: 8,
+    gap: 10,
   },
-  statusLine: {
-    opacity: 0.8,
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   divider: {
     height: 1,
     opacity: 0.25,
+  },
+  meta: {
+    opacity: 0.8,
   },
   actionsRow: {
     marginTop: 8,
@@ -128,12 +114,6 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     alignSelf: 'flex-start',
-  },
-  row: {
-    marginTop: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   hint: {
     opacity: 0.7,

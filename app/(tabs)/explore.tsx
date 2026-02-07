@@ -1,139 +1,130 @@
-import { Image } from 'expo-image';
-import { Link } from 'expo-router';
-import { Platform, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, Switch, View } from 'react-native';
 
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Collapsible } from '@/components/ui/collapsible';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { getDebugFlags, resetDebugFlags, setDebugFlags, subscribeDebugFlags } from '@/services/debugFlags';
+import { clearLeadsCache, loadCachedLeads } from '@/services/leads/leadsCache';
 
-export default function TabTwoScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
+export default function DebugTab() {
+  const [flags, setFlagsState] = useState(getDebugFlags());
+  const [cacheItemsCount, setCacheItemsCount] = useState<number | null>(null);
+  const [cacheLastSynced, setCacheLastSynced] = useState<string | null>(null);
+
+  const refreshCacheStatus = useCallback(async () => {
+    const cached = await loadCachedLeads();
+    setCacheItemsCount(cached.items ? cached.items.length : 0);
+    setCacheLastSynced(cached.lastSynced);
+  }, []);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    return subscribeDebugFlags(setFlagsState);
+  }, []);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    void refreshCacheStatus();
+  }, [refreshCacheStatus]);
+
+  if (!__DEV__) {
+    return (
+      <ThemedView style={styles.screen}>
+        <ThemedText>Debug ei ole käytössä production-buildissä.</ThemedText>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
+    );
+  }
 
-      {__DEV__ ? (
-        <Card style={styles.debugCard}>
-          <ThemedText type="subtitle">Demo Debug</ThemedText>
-          <ThemedText style={styles.debugText}>
-            Kytke SIMULATE_ERROR/OFFLINE päälle videota varten.
-          </ThemedText>
-          <Link href="/debug" asChild>
-            <Button title="Avaa Debug" onPress={() => {}} style={styles.debugBtn} />
-          </Link>
-        </Card>
-      ) : null}
+  const anyEnabled = flags.simulateError || flags.simulateOffline;
 
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
+  return (
+    <ThemedView style={styles.screen}>
+      <ThemedText type="title">Debug</ThemedText>
+
+      <Card style={styles.card}>
+        <ThemedText type="subtitle">{anyEnabled ? 'Simulaatio PÄÄLLÄ' : 'Simulaatio pois päältä'}</ThemedText>
+
+        <Row
+          label="SIMULATE_ERROR"
+          value={flags.simulateError}
+          onChange={(v) => setDebugFlags({ simulateError: v })}
         />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
+        <Row
+          label="SIMULATE_OFFLINE"
+          value={flags.simulateOffline}
+          onChange={(v) => setDebugFlags({ simulateOffline: v })}
+        />
+
+        <View style={styles.divider} />
+
+        <ThemedText type="subtitle">Cache status</ThemedText>
+        <ThemedText style={styles.meta}>
+          Cached leads: {cacheItemsCount === null ? '…' : `${cacheItemsCount} items`}
         </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+        <ThemedText style={styles.meta}>Last synced: {cacheLastSynced ?? '—'}</ThemedText>
+
+        <View style={styles.actionsRow}>
+          <Button title="Reset debug flags" onPress={() => resetDebugFlags()} style={styles.actionBtn} />
+          <Button
+            title="Clear cached leads"
+            onPress={async () => {
+              await clearLeadsCache();
+              await refreshCacheStatus();
+            }}
+            style={styles.actionBtn}
+          />
+          <Button title="Refresh cache status" onPress={() => refreshCacheStatus()} style={styles.actionBtn} />
+        </View>
+      </Card>
+
+      <ThemedText style={styles.hint}>
+        Demo: täytä cache kerran online → kytke SIMULATE_OFFLINE → palaa Inboxiin.
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+function Row(props: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <View style={styles.row}>
+      <ThemedText>{props.label}</ThemedText>
+      <Switch value={props.value} onValueChange={props.onChange} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  screen: {
+    flex: 1,
+    padding: 16,
   },
-  titleContainer: {
+  card: {
+    marginTop: 16,
+    gap: 10,
+  },
+  row: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  debugCard: {
-    marginTop: 12,
-    gap: 8,
+  divider: {
+    height: 1,
+    opacity: 0.25,
   },
-  debugText: {
+  meta: {
     opacity: 0.8,
   },
-  debugBtn: {
-    marginTop: 4,
+  actionsRow: {
+    marginTop: 8,
+    gap: 10,
+  },
+  actionBtn: {
     alignSelf: 'flex-start',
+  },
+  hint: {
+    opacity: 0.7,
+    marginTop: 16,
   },
 });
