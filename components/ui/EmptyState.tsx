@@ -18,20 +18,25 @@ import { Card } from '@/components/ui/Card';
 export function EmptyState({
   title,
   subtitle,
+  hint,
   cta,
   onCta,
+  ctaDisabled,
 }: {
   title: string;
   subtitle: string;
+  hint?: string;
   cta: string;
   onCta: () => void;
+  ctaDisabled?: boolean;
 }) {
   return (
     <Card style={styles.wrap}>
       <ThemedText type="title">{title}</ThemedText>
       <ThemedText style={styles.sub}>{subtitle}</ThemedText>
+      {hint ? <ThemedText style={styles.hint}>{hint}</ThemedText> : null}
 
-      <Button title={cta} onPress={onCta} style={styles.btn} />
+      <Button title={cta} onPress={onCta} disabled={ctaDisabled} style={styles.btn} />
 
       <View style={styles.spacer} />
     </Card>
@@ -45,6 +50,9 @@ const styles = StyleSheet.create({
   },
   sub: {
     opacity: 0.85,
+  },
+  hint: {
+    opacity: 0.75,
   },
   btn: {
     marginTop: 8,

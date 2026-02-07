@@ -11,6 +11,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { Radii, Spacing } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 export function InboxSkeleton({ rows = 6 }: { rows?: number }) {
@@ -30,12 +31,12 @@ export function InboxSkeleton({ rows = 6 }: { rows?: number }) {
 
 const styles = StyleSheet.create({
   wrap: {
-    padding: 16,
+    padding: Spacing.md,
     gap: 12,
   },
   row: {
     height: 56,
-    borderRadius: 12,
+    borderRadius: Radii.md,
     borderWidth: 1,
     opacity: 0.35,
   },

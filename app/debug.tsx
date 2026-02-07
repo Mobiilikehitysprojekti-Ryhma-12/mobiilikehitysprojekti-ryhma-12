@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -11,14 +11,28 @@ import {
     setDebugFlags,
     subscribeDebugFlags,
 } from '@/services/debugFlags';
+import { clearLeadsCache, loadCachedLeads } from '@/services/leads/leadsCache';
 
 export default function DebugScreen() {
   const [flags, setFlags] = useState(getDebugFlags());
+  const [cacheItemsCount, setCacheItemsCount] = useState<number | null>(null);
+  const [cacheLastSynced, setCacheLastSynced] = useState<string | null>(null);
+
+  const refreshCacheStatus = useCallback(async () => {
+    const cached = await loadCachedLeads();
+    setCacheItemsCount(cached.items ? cached.items.length : 0);
+    setCacheLastSynced(cached.lastSynced);
+  }, []);
 
   useEffect(() => {
     if (!__DEV__) return;
     return subscribeDebugFlags(setFlags);
   }, []);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    void refreshCacheStatus();
+  }, [refreshCacheStatus]);
 
   if (!__DEV__) {
     return (
@@ -43,7 +57,26 @@ export default function DebugScreen() {
           SIMULATE_OFFLINE: {String(flags.simulateOffline)}
         </ThemedText>
 
-        <Button title="Reset to defaults" onPress={() => resetDebugFlags()} style={styles.resetBtn} />
+        <View style={styles.divider} />
+
+        <ThemedText type="subtitle">Cache status</ThemedText>
+        <ThemedText style={styles.statusLine}>
+          Cached leads: {cacheItemsCount === null ? '…' : `${cacheItemsCount} items`}
+        </ThemedText>
+        <ThemedText style={styles.statusLine}>Last synced: {cacheLastSynced ?? '—'}</ThemedText>
+
+        <View style={styles.actionsRow}>
+          <Button title="Reset debug flags" onPress={() => resetDebugFlags()} style={styles.actionBtn} />
+          <Button
+            title="Clear cached leads"
+            onPress={async () => {
+              await clearLeadsCache();
+              await refreshCacheStatus();
+            }}
+            style={styles.actionBtn}
+          />
+          <Button title="Refresh cache status" onPress={() => refreshCacheStatus()} style={styles.actionBtn} />
+        </View>
       </Card>
 
       <Row
@@ -85,8 +118,15 @@ const styles = StyleSheet.create({
   statusLine: {
     opacity: 0.8,
   },
-  resetBtn: {
+  divider: {
+    height: 1,
+    opacity: 0.25,
+  },
+  actionsRow: {
     marginTop: 8,
+    gap: 10,
+  },
+  actionBtn: {
     alignSelf: 'flex-start',
   },
   row: {

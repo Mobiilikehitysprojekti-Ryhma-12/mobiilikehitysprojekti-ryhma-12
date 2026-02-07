@@ -6,6 +6,8 @@ import { ExternalLink } from '@/components/external-link';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { Collapsible } from '@/components/ui/collapsible';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
@@ -34,9 +36,15 @@ export default function TabTwoScreen() {
       <ThemedText>This app includes example code to help you get started.</ThemedText>
 
       {__DEV__ ? (
-        <Link href="/debug" style={{ marginTop: 12, textDecorationLine: 'underline' }}>
-          Debug
-        </Link>
+        <Card style={styles.debugCard}>
+          <ThemedText type="subtitle">Demo Debug</ThemedText>
+          <ThemedText style={styles.debugText}>
+            Kytke SIMULATE_ERROR/OFFLINE päälle videota varten.
+          </ThemedText>
+          <Link href="/debug" asChild>
+            <Button title="Avaa Debug" onPress={() => {}} style={styles.debugBtn} />
+          </Link>
+        </Card>
       ) : null}
 
       <Collapsible title="File-based routing">
@@ -116,5 +124,16 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     gap: 8,
+  },
+  debugCard: {
+    marginTop: 12,
+    gap: 8,
+  },
+  debugText: {
+    opacity: 0.8,
+  },
+  debugBtn: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
   },
 });
