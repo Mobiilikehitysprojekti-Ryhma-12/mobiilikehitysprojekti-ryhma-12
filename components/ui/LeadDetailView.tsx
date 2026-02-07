@@ -1,12 +1,13 @@
 // components/ui/LeadDetailView.tsx
 
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Card } from '@/components/ui/Card';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import type { Lead } from '@/models/Lead';
 import { leadStatusLabel } from '@/models/Lead';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 /**
  * LeadDetailView (presentational)
@@ -23,13 +24,10 @@ import { leadStatusLabel } from '@/models/Lead';
 export function LeadDetailView({ lead }: { lead: Lead }) {
     const borderColor = useThemeColor({}, 'icon');
     const tintColor = useThemeColor({}, 'tint');
-    //const backgroundColor = useThemeColor({}, 'background');
-    const backgroundColor = '#E5E4E2';
-
     return (
-        <ThemedView style={[styles.screen, { backgroundColor }]}>
+        <ThemedView style={styles.screen}>
             {/* Kortti: linjassa listakomponentin kanssa (ohut reunus, pehmeä radius) */}
-            <ThemedView style={[styles.card, { borderColor }]}>
+            <Card style={[styles.card, { borderColor }]}>
                 <View style={styles.top}>
                     <ThemedText type="title" numberOfLines={2} style={{ flex: 1 }}>
                         {lead.title}
@@ -59,7 +57,7 @@ export function LeadDetailView({ lead }: { lead: Lead }) {
                 {lead.description ? (
                     <ThemedText style={styles.description}>{lead.description}</ThemedText>
                 ) : null}
-            </ThemedView>
+            </Card>
         </ThemedView>
     );
 }
@@ -72,7 +70,6 @@ const styles = StyleSheet.create({
     },
     card: {
         padding: 14,
-        borderRadius: 12,
         borderWidth: 1,
         gap: 10,
     },

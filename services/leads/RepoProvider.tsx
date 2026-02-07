@@ -13,6 +13,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import { ApiLeadsRepository } from './ApiLeadsRepository';
+import { DebugLeadsRepository } from './DebugLeadsRepository';
 import { FakeLeadsRepository } from './FakeLeadsRepository';
 import type { LeadsRepository } from './LeadsRepository';
 
@@ -27,7 +28,8 @@ export function RepoProvider({ children }: { children: React.ReactNode }) {
     // Miksi memo:
     // - Estetään uuden repo-instanssin luonti jokaisella renderillä.
     // - Repo voi sisältää myöhemmin esim. cachea.
-    return USE_FAKE_REPO ? new FakeLeadsRepository() : new ApiLeadsRepository();
+    const baseRepo = USE_FAKE_REPO ? new FakeLeadsRepository() : new ApiLeadsRepository();
+    return __DEV__ ? new DebugLeadsRepository(baseRepo) : baseRepo;
   }, []);
 
   return <RepoContext.Provider value={repo}>{children}</RepoContext.Provider>;

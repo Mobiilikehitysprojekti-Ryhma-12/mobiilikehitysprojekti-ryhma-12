@@ -24,18 +24,16 @@
  */
 
 
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ErrorCard } from '@/components/ui/ErrorCard';
 import { InboxSkeleton } from '@/components/ui/InboxSkeleton';
-import type { Lead } from '@/models/Lead';
-import { leadStatusLabel } from '@/models/Lead';
-import { useLeadsRepo } from '@/services/leads/RepoProvider';
 import { LeadDetailView } from '@/components/ui/LeadDetailView';
+import type { Lead } from '@/models/Lead';
+import { useLeadsRepo } from '@/services/leads/RepoProvider';
 
 export default function LeadDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();

@@ -9,9 +9,10 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Input } from '@/components/ui/Input';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import type { LeadStatus } from '@/models/Lead';
 
@@ -36,18 +37,16 @@ export function InboxFiltersBar({
   onQueryChange: (value: string) => void;
   onStatusChange: (value: StatusOption) => void;
 }) {
-  const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
 
   return (
     <View style={styles.wrap}>
-      <TextInput
+      <Input
         value={query}
         onChangeText={onQueryChange}
         placeholder="Hae otsikosta…"
-        placeholderTextColor={borderColor}
-        style={[styles.input, { color: textColor, borderColor }]}
+        style={[styles.input, { borderColor }]}
       />
 
       <View style={styles.row}>
@@ -80,9 +79,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   input: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
     borderWidth: 1,
   },
   row: {

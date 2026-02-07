@@ -11,7 +11,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
  *
  * Expo Routerin (tabs)-ryhmän layout.
  * - `name="index"` vastaa tiedostoa app/(tabs)/index.tsx (nyt Inbox)
- * - `name="explore"` vastaa app/(tabs)/explore.tsx
+   * - `name="debug"` vastaa tiedostoa app/(tabs)/debug.tsx
  *
  * Sprint 1: pidetään reititys minimissä -> Inbox korvaa suoraan index-tabin.
  */
@@ -34,9 +34,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="debug"
         options={{
-          title: 'Explore',
+          title: 'Debug',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />

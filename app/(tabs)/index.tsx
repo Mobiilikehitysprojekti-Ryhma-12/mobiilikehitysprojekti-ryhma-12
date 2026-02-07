@@ -13,13 +13,14 @@
 
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorCard } from '@/components/ui/ErrorCard';
 import { InboxFiltersBar } from '@/components/ui/InboxFiltersBar';
 import { InboxSkeleton } from '@/components/ui/InboxSkeleton';
 import { LeadListItem } from '@/components/ui/LeadListItem';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { useLeadsRepo } from '@/services/leads/RepoProvider';
 import { NetworkService } from '@/services/networkService';
 import { useInboxViewModel } from '@/state/inbox/useInboxViewModel';
@@ -44,6 +45,11 @@ export default function InboxTab() {
 
   // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
+    // Offline-tilassa estetään refresh ja annetaan selkeä viesti.
+    if (vm.state.isOffline) {
+      Alert.alert('Ei internetyhteyttä', 'Olet offline-tilassa. Näytetään välimuistidataa.');
+      return;
+    }
     setRefreshing(true);
     await vm.refresh();
     setRefreshing(false);
@@ -74,6 +80,12 @@ export default function InboxTab() {
         onStatusChange={vm.setStatus}
       />
 
+      <OfflineBanner
+        isOffline={vm.state.isOffline}
+        dataSource={vm.state.dataSource}
+        lastSynced={vm.state.lastSynced}
+      />
+
       {vm.state.kind === 'empty' ? (
         <EmptyState
           title={vm.state.emptyKind === 'no_items' ? 'Ei liidejä' : 'Ei tuloksia'}
@@ -82,8 +94,20 @@ export default function InboxTab() {
               ? 'Päivitä näkymä tai tarkista yhteys.'
               : 'Kokeile muuttaa hakua tai suodattimia.'
           }
+          hint={
+            vm.state.isOffline && vm.state.emptyKind === 'no_items'
+              ? 'Olet offline-tilassa. Välimuistidataa ei löytynyt vielä.'
+              : undefined
+          }
           cta="Päivitä"
-          onCta={vm.refresh}
+          ctaDisabled={vm.state.isOffline}
+          onCta={() => {
+            if (vm.state.isOffline) {
+              Alert.alert('Ei internetyhteyttä', 'Olet offline-tilassa. Näytetään välimuistidataa.');
+              return;
+            }
+            void vm.refresh();
+          }}
         />
       ) : (
         <FlatList
@@ -98,6 +122,7 @@ export default function InboxTab() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
+              enabled={!vm.state.isOffline}
               tintColor="#0a7ea4" // iOS spinner väri
               colors={['#0a7ea4']} // Android spinner väri
             />
