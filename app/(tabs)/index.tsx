@@ -8,11 +8,12 @@
  * - Se hakee repositoryn Contextista (RepoProvider) ja delegoi logiikan ViewModel-hookille.
  * 
  * Sprint 1 P1: Pull-to-refresh lisätty (#30)
+ * Sprint 2 P1 (#43): Offline-indikaattori (Ahvko)
  */
 
 import { useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorCard } from '@/components/ui/ErrorCard';
@@ -20,6 +21,7 @@ import { InboxFiltersBar } from '@/components/ui/InboxFiltersBar';
 import { InboxSkeleton } from '@/components/ui/InboxSkeleton';
 import { LeadListItem } from '@/components/ui/LeadListItem';
 import { useLeadsRepo } from '@/services/leads/RepoProvider';
+import { NetworkService } from '@/services/networkService';
 import { useInboxViewModel } from '@/state/inbox/useInboxViewModel';
 
 export default function InboxTab() {
@@ -29,6 +31,16 @@ export default function InboxTab() {
 
   // Pull-to-refresh state
   const [refreshing, setRefreshing] = useState(false);
+
+  // ===== START #43: Network state =====
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    NetworkService.isOnline().then(setIsOnline);
+    const unsubscribe = NetworkService.subscribe(setIsOnline);
+    return () => unsubscribe();
+  }, []);
+  // ===== END #43 =====
 
   // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
@@ -47,6 +59,14 @@ export default function InboxTab() {
 
   return (
     <View style={styles.screen}>
+      {/* START #43: Offline banner */}
+      {!isOnline && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineText}>📶 Offline • Välimuistidata</Text>
+        </View>
+      )}
+      {/* END #43 */}
+
       <InboxFiltersBar
         query={vm.filters.query}
         status={vm.filters.status}
@@ -95,4 +115,17 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 24,
   },
+  // START #43: Offline banner
+  offlineBanner: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  offlineText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  // END #43
 });
