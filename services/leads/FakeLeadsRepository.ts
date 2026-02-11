@@ -4,13 +4,14 @@
  * Demo-/kehitystoteutus repositorylle.
  * - Mahdollistaa UI:n tekemisen ilman backendia.
  * - Sisältää pienen viiveen, jotta loading-skeleton on helppo demonstroida.
+ * - Tallentaa muutokset muistiin (ei persistenssi).
  */
 
 import type { Lead } from '@/models/Lead';
 
 import type { LeadsRepository } from './LeadsRepository';
 
-const demoLeads: Lead[] = [
+let demoLeads: Lead[] = [
   {
     id: '1',
     title: 'Kylpyhuoneen siivous',
@@ -57,5 +58,17 @@ export class FakeLeadsRepository implements LeadsRepository {
   async getLeadById(id: string): Promise<Lead | null> {
     await delay(250);
     return demoLeads.find((x) => x.id === id) ?? null;
+  }
+
+  /**
+   * Päivittää liidin statuksen muistiin.
+   * Demo-tarkoitukseen: muistiin tallennettu data päivittyy.
+   */
+  async updateLeadStatus(leadId: string, status: 'new' | 'quoted' | 'accepted' | 'rejected'): Promise<void> {
+    await delay(200);
+    const lead = demoLeads.find((x) => x.id === leadId);
+    if (lead) {
+      lead.status = status;
+    }
   }
 }

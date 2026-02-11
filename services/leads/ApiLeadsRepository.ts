@@ -31,4 +31,14 @@ export class ApiLeadsRepository implements LeadsRepository {
     // Miksi encodeURIComponent: jos id sisältää erikoismerkkejä, URL pysyy validina.
     return await getJson<Lead>(`/leads/${encodeURIComponent(id)}`);
   }
+
+  /**
+   * Päivittää liidin statuksen.
+   * TODO: Implementoi kun PATCH /leads/:id/status endpointti valmis
+   */
+  async updateLeadStatus(leadId: string, status: 'new' | 'quoted' | 'accepted' | 'rejected'): Promise<void> {
+    // Placeholder for API integration
+    // await patchJson(`/leads/${encodeURIComponent(leadId)}/status`, { status });
+    throw new Error('ApiLeadsRepository.updateLeadStatus: ei vielä implementoitu');
+  }
 }
