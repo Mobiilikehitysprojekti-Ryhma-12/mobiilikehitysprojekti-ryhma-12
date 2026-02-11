@@ -28,4 +28,9 @@ export class DebugLeadsRepository implements LeadsRepository {
     this.maybeThrow();
     return this.inner.getLeadById(id);
   }
+
+  async updateLeadStatus(leadId: string, status: 'new' | 'quoted' | 'accepted' | 'rejected'): Promise<void> {
+    this.maybeThrow();
+    return this.inner.updateLeadStatus(leadId, status);
+  }
 }
