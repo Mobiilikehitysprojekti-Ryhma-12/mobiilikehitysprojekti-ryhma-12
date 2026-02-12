@@ -7,7 +7,7 @@
  * - Tallentaa muutokset muistiin (ei persistenssi).
  */
 
-import type { Lead } from '@/models/Lead';
+import type { Lead, LeadStatus } from '@/models/Lead';
 
 import type { LeadsRepository } from './LeadsRepository';
 
@@ -35,7 +35,7 @@ let demoLeads: Lead[] = [
   {
     id: '3',
     title: 'Sähkörasian vaihto',
-    status: 'accepted',
+    status: 'won',
     service: 'Sähkötyö',
     address: 'Tampere',
     createdAt: '2026-01-25',
@@ -64,7 +64,7 @@ export class FakeLeadsRepository implements LeadsRepository {
    * Päivittää liidin statuksen muistiin.
    * Demo-tarkoitukseen: muistiin tallennettu data päivittyy.
    */
-  async updateLeadStatus(leadId: string, status: 'new' | 'quoted' | 'accepted' | 'rejected'): Promise<void> {
+  async updateLeadStatus(leadId: string, status: LeadStatus): Promise<void> {
     await delay(200);
     const lead = demoLeads.find((x) => x.id === leadId);
     if (lead) {

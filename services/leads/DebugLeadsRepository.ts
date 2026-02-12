@@ -1,6 +1,6 @@
 import { getDebugFlags } from '@/services/debugFlags';
 
-import type { Lead } from '@/models/Lead';
+import type { Lead, LeadStatus } from '@/models/Lead';
 
 import type { LeadsRepository } from './LeadsRepository';
 
@@ -29,7 +29,7 @@ export class DebugLeadsRepository implements LeadsRepository {
     return this.inner.getLeadById(id);
   }
 
-  async updateLeadStatus(leadId: string, status: 'new' | 'quoted' | 'accepted' | 'rejected'): Promise<void> {
+  async updateLeadStatus(leadId: string, status: LeadStatus): Promise<void> {
     this.maybeThrow();
     return this.inner.updateLeadStatus(leadId, status);
   }

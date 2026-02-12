@@ -102,7 +102,7 @@ export default function LeadDetailScreen() {
     return (
       <>
         <Stack.Screen options={{ title: interimTitle }} />
-        <ErrorCard message={errorMessage} onRetry={load} />
+        <ErrorCard error={errorMessage} onRetry={load} />
       </>
     );
   }
@@ -111,7 +111,7 @@ export default function LeadDetailScreen() {
     return (
       <>
         <Stack.Screen options={{ title: interimTitle }} />
-        <ErrorCard message="Liidiä ei löytynyt" onRetry={load} />
+        <ErrorCard error="Liidiä ei löytynyt" onRetry={load} />
       </>
     );
   }
