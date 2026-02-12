@@ -4,10 +4,10 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
-import type { Lead } from '../../models/Lead';
-import { ThemedView } from '../themed-view';
-import { LeadInfoCard } from './LeadInfoCard';
-import { QuoteActionsCard } from './QuoteActionsCard';
+import { ThemedView } from '@/components/themed-view';
+import { LeadInfoCard } from '@/components/ui/LeadInfoCard';
+import { QuoteActionsCard } from '@/components/ui/QuoteActionsCard';
+import type { Lead } from '@/models/Lead';
 
 /**
  * LeadDetailView (container)

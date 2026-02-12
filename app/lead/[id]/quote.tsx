@@ -69,7 +69,7 @@ export default function QuoteBuilderScreen() {
     return (
       <>
         <Stack.Screen options={{ title: 'Tarjous' }} />
-        <ErrorCard error={errorMessage} onRetry={() => setErrorMessage(null)} />
+        <ErrorCard message={errorMessage} onRetry={() => setErrorMessage(null)} />
       </>
     );
   }

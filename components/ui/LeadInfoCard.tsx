@@ -11,13 +11,13 @@
  * - Voidaan käyttää muuallakin tarvittaessa
  */
 
+import { ThemedText } from '@/components/themed-text';
+import { Card } from '@/components/ui/Card';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import type { Lead } from '@/models/Lead';
+import { leadStatusLabel } from '@/models/Lead';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useThemeColor } from '../../hooks/use-theme-color';
-import type { Lead } from '../../models/Lead';
-import { leadStatusLabel } from '../../models/Lead';
-import { ThemedText } from '../themed-text';
-import { Card } from './Card';
 
 interface LeadInfoCardProps {
   lead: Lead;

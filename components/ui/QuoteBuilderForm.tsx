@@ -12,17 +12,17 @@
  * - Helppo testata ja muokata
  */
 
+import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { QuoteFormFields } from '@/components/ui/QuoteFormFields';
+import { QuoteFormHeader } from '@/components/ui/QuoteFormHeader';
+import { QuotePreview } from '@/components/ui/QuotePreview';
+import { useQuoteDraft } from '@/hooks/useQuoteDraft';
+import type { QuoteFormData } from '@/models/Quote';
+import { validateQuoteForm } from '@/utils/validateQuoteForm';
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
-import { useQuoteDraft } from '../../hooks/useQuoteDraft';
-import type { QuoteFormData } from '../../models/Quote';
-import { validateQuoteForm } from '../../utils/validateQuoteForm';
-import { ThemedView } from '../themed-view';
-import { Button } from './Button';
-import { Card } from './Card';
-import { QuoteFormFields } from './QuoteFormFields';
-import { QuoteFormHeader } from './QuoteFormHeader';
-import { QuotePreview } from './QuotePreview';
 
 /**
  * Props QuoteBuilderForm-komponentille

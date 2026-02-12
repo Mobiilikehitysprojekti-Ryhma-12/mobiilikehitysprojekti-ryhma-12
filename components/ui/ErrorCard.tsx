@@ -1,52 +1,54 @@
 /**
- * ErrorCard — Virhekortti-komponentti
- * 
- * Tarkoitus:
- * - Näyttää virheilmoitus käyttäjälle
- * - Tarjoaa uudelleen yritä -painikkeen
- * - Yhtenäinen virhetilan esitys
- * 
- * Käyttö:
- * - <ErrorCard error="Lataus epäonnistui" onRetry={() => {}} />
+ * ErrorCard
+ *
+ * Yhtenäinen virhetila-komponentti, jossa on Retry-nappi.
+ *
+ * Miksi tämä on oma komponentti:
+ * - Sama virhe-UI toistuu useissa ruuduissa (Inbox, Detail).
+ * - Yhdenmukainen UX ja helpompi ylläpito.
  */
 
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { ThemedText } from '../themed-text';
-import { Button } from './Button';
-import { Card } from './Card';
+import { StyleSheet, View } from 'react-native';
 
-export interface ErrorCardProps {
-  error: string;
-  onRetry: () => void;
-  retryLabel?: string;
-}
+import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
-/**
- * ErrorCard komponentti
- * Näyttää virheen ja uudelleen yritä -painikkeen
- */
-export function ErrorCard({
-  error,
-  onRetry,
-  retryLabel = 'Yritä uudesstaan',
-}: ErrorCardProps) {
+export function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const tintColor = useThemeColor({}, 'tint');
+
   return (
     <Card style={styles.card}>
-      <ThemedText style={styles.errorText}>⚠️ {error}</ThemedText>
-      <Button title={retryLabel} onPress={onRetry} />
+      <ThemedText type="subtitle">Virhe</ThemedText>
+      <ThemedText style={styles.msg}>{message}</ThemedText>
+
+      <Button
+        title="Yritä uudelleen"
+        onPress={onRetry}
+        leading={<View style={[styles.btnAccent, { backgroundColor: tintColor }]} />}
+        style={styles.btn}
+      />
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
-    marginVertical: 12,
-    padding: 16,
+    margin: 16,
+    gap: 8,
   },
-  errorText: {
-    marginBottom: 12,
-    fontSize: 14,
+  msg: {
+    opacity: 0.9,
+  },
+  btn: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  btnAccent: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 });
