@@ -12,11 +12,11 @@
  * - Voidaan uudelleenkäyttää muissa lomakkeissa
  */
 
-import { ThemedText } from '@/components/themed-text';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { ThemedText } from '../themed-text';
+import { Button } from './Button';
+import { Card } from './Card';
 
 interface QuoteFormHeaderProps {
   leadTitle: string;
