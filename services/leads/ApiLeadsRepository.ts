@@ -11,10 +11,10 @@
  * 5. Virhetilanteessa  käytä cachea
  */
 
-import type { Lead } from '@/models/Lead';
+import type { Lead, LeadStatus } from '@/models/Lead';
 import { getJson } from '@/services/apiClient';
-import { LeadsCacheService } from './cacheService';
 import { NetworkService } from '@/services/networkService';
+import { LeadsCacheService } from './cacheService';
 
 import type { LeadsRepository } from './LeadsRepository';
 
@@ -156,7 +156,7 @@ export class ApiLeadsRepository implements LeadsRepository {
    * Päivittää liidin statuksen.
    * TODO: Implementoi kun PATCH /leads/:id/status endpointti valmis
    */
-  async updateLeadStatus(leadId: string, status: 'new' | 'quoted' | 'accepted' | 'rejected'): Promise<void> {
+  async updateLeadStatus(leadId: string, status: LeadStatus): Promise<void> {
     // Placeholder for API integration
     // await patchJson(`/leads/${encodeURIComponent(leadId)}/status`, { status });
     throw new Error('ApiLeadsRepository.updateLeadStatus: ei vielä implementoitu');

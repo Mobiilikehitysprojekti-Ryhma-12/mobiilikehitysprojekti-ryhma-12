@@ -1,64 +1,77 @@
+/**
+ * Button — Painike-komponentti
+ * 
+ * Tarkoitus:
+ * - Tarjoaa yhtenäisen painikepyynnin koko sovelluksessa
+ * - Tukee disabled-tilan ja loading-indikaatoria
+ * - Käyttää teemoitusta väreille
+ * 
+ * Käyttö:
+ * - <Button title="Klikkaa" onPress={() => {}} />
+ * - <Button title="Olematon" disabled={true} />
+ * - <Button title="Lähettää..." loading={true} />
+ */
+
 import React from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    type TouchableOpacityProps,
+} from 'react-native';
+import { useThemeColor } from '../../hooks/use-theme-color';
 
-import { ThemedText } from '@/components/themed-text';
-import { Radii, Spacing } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
-
-export function Button({
-  title,
-  onPress,
-  disabled,
-  loading,
-  leading,
-  style,
-}: {
+export interface ButtonProps extends TouchableOpacityProps {
   title: string;
-  onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  leading?: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-}) {
-  const borderColor = useThemeColor({}, 'icon');
+}
 
-  const isDisabled = disabled || loading;
+/**
+ * Button komponentti
+ * Palauttaa painikkeen (TouchableOpacity + Text)
+ * Tukee loading-tilaa (näyttää spinner)
+ */
+export function Button({
+  title,
+  disabled = false,
+  loading = false,
+  style,
+  ...rest
+}: ButtonProps) {
+  const tintColor = useThemeColor({}, 'tint');
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.base,
-        { borderColor },
-        pressed && !isDisabled ? styles.pressed : null,
-        isDisabled ? styles.disabled : null,
+    <TouchableOpacity
+      {...rest}
+      disabled={disabled || loading}
+      style={[
+        styles.button,
+        { backgroundColor: tintColor, opacity: disabled || loading ? 0.5 : 1 },
         style,
       ]}
+      activeOpacity={disabled || loading ? 1 : 0.7}
     >
-      {leading ? <View style={styles.leading}>{leading}</View> : null}
-      <ThemedText type="defaultSemiBold">{loading ? 'Ladataan…' : title}</ThemedText>
-    </Pressable>
+      {loading ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
+        <Text style={[styles.text, { color: '#fff' }]}>{title}</Text>
+      )}
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
+  button: {
     paddingVertical: 12,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radii.sm,
-    borderWidth: 1,
-    flexDirection: 'row',
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  leading: {
-    marginRight: 10,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  disabled: {
-    opacity: 0.55,
+  text: {
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

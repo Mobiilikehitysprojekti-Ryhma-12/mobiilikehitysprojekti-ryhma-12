@@ -1,26 +1,48 @@
+/**
+ * Card — Kortti-komponentti
+ * 
+ * Tarkoitus:
+ * - Näyttää sisältöä kortissa (välineistöllä, reunuksilla, täyttöillä)
+ * - Yhtenäinen tyyli kaikkialla sovelluksessa
+ * - Tukee teemoitusta
+ * 
+ * Käyttö:
+ * - <Card><Text>Sisältö</Text></Card>
+ * - <Card style={customStyle}>Sisältö</Card>
+ */
+
 import React from 'react';
-import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type ViewProps } from 'react-native';
+import { useThemeColor } from '../../hooks/use-theme-color';
 
-import { ThemedView } from '@/components/themed-view';
-import { Radii, Spacing } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
+export interface CardProps extends ViewProps {}
 
-export function Card({
-  style,
-  children,
-}: {
-  style?: StyleProp<ViewStyle>;
-  children: React.ReactNode;
-}) {
-  const borderColor = useThemeColor({}, 'icon');
+/**
+ * Card komponentti
+ * Palauttaa View-komponentin, joka näyttää korttin (background + reunus)
+ */
+export function Card({ style, ...rest }: CardProps) {
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
 
-  return <ThemedView style={[styles.base, { borderColor }, style]}>{children}</ThemedView>;
+  return (
+    <View
+      {...rest}
+      style={[
+        styles.card,
+        { backgroundColor, borderColor },
+        style,
+      ]}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
-  base: {
+  card: {
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 8,
+    marginHorizontal: 0,
     borderWidth: 1,
-    borderRadius: Radii.md,
-    padding: Spacing.md,
   },
 });

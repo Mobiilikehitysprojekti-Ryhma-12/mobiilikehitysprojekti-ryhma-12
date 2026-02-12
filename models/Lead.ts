@@ -1,57 +1,35 @@
 /**
- * Domain-tyyppi: Lead ("liidi").
- *
- * Miksi tämä on tärkeä:
- * - UI ja data-kerros jakaa saman "kielen" (tyypit), jolloin virheitä tulee vähemmän.
- * - Kun myöhemmin vaihdetaan datalähde (Fake -> API), UI ei muutu jos tyypit pysyy.
+ * Lead model — Liidin (lead) data-malli
+ * 
+ * Tarkoitus:
+ * - Määrittää liidin rakenne ja tyypit
+ * - Sisältää apufunktioita statuksen formatoinnille
+ * 
+ * Liidit ovat asiakashakemuksia / myyntipotentiaaleja
  */
 
-/**
- * Liidin status.
- *
- * Huom: käytetään union-tyyppiä, jotta status-arvot pysyy rajattuna ja tyypitettynä.
- */
-export type LeadStatus = 'new' | 'quoted' | 'accepted' | 'rejected';
+export type LeadStatus = 'new' | 'quoted' | 'won' | 'lost';
 
-export type Lead = {
+export interface Lead {
   id: string;
   title: string;
-
-  /** Vapaa kuvaus/taustatieto (valinnainen). */
-  description?: string;
-
-  /** Prosessin tila. */
   status: LeadStatus;
-
-  /** Palveluluokka / työn tyyppi (valinnainen). */
   service?: string;
-
-  /** Osoite tai alue (valinnainen). */
-  address?: string;
-
-  /** ISO-muotoinen pvm/aikaleima (demo: "2026-01-28"). */
-  createdAt: string;
-
-  /** Asiakkaan nimi (valinnainen). */
   customerName?: string;
-};
+  address?: string;
+  description?: string;
+  createdAt: string;
+}
 
 /**
- * UI-helper: muuntaa statuskoodin käyttäjäystävälliseksi tekstiksi.
- *
- * Miksi helper erikseen:
- * - Sama muunnos tarvitaan useassa näkymässä (Inbox list item, detail jne.)
- * - Yksi lähde totuudelle -> vähemmän kopiointia ja ristiriitoja.
+ * Palauttaa suomalaisen statuksen nimen
  */
 export function leadStatusLabel(status: LeadStatus): string {
-  switch (status) {
-    case 'new':
-      return 'Uusi';
-    case 'quoted':
-      return 'Tarjottu';
-    case 'accepted':
-      return 'Hyväksytty';
-    case 'rejected':
-      return 'Hylätty';
-  }
+  const labels: Record<LeadStatus, string> = {
+    new: 'Uusi',
+    quoted: 'Tarjottu',
+    won: 'Voitettu',
+    lost: 'Menetetty',
+  };
+  return labels[status];
 }
