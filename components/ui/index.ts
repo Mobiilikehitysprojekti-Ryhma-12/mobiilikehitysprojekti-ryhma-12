@@ -15,6 +15,7 @@ export { InboxSkeleton } from './InboxSkeleton';
 export { Input } from './Input';
 export { LeadDetailView } from './LeadDetailView';
 export { LeadListItem } from './LeadListItem';
+export { LeadStatusSelector } from './LeadStatusSelector';
 export { MapCard } from './MapCard';
 export { QuoteBuilderForm } from './QuoteBuilderForm';
 
