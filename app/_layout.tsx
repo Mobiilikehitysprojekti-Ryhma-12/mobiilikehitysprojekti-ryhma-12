@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import 'react-native-reanimated';
 
+import { NotificationPermissionRequester } from '@/components/NotificationPermissionRequester';
 import { initDebugFlags } from '@/services/debugFlags';
 import { RepoProvider } from '@/services/leads/RepoProvider';
 import { QuoteProvider } from '@/services/quotes/QuoteProvider';
@@ -36,11 +37,13 @@ export default function RootLayout() {
     <RepoProvider>
       <QuoteProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          </Stack>
-          <StatusBar style="auto" />
+          <NotificationPermissionRequester>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </NotificationPermissionRequester>
         </ThemeProvider>
       </QuoteProvider>
     </RepoProvider>
