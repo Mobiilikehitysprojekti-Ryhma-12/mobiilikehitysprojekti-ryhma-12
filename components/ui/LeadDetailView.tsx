@@ -9,7 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { LeadInfoCard } from '@/components/ui/LeadInfoCard';
 import { MapCard } from '@/components/ui/MapCard';
 import { QuoteActionsCard } from '@/components/ui/QuoteActionsCard';
-import type { Lead } from '@/models/Lead';
+import type { Lead, LeadStatus } from '@/models/Lead';
 
 /**
  * LeadDetailView (container)
@@ -25,7 +25,17 @@ import type { Lead } from '@/models/Lead';
  * - QuoteActionsCard hallinnoi tarjoukseen liittyvät toiminnot
  * - Helpottaa testattavuutta ja uudelleenkäyttöä
  */
-export function LeadDetailView({ lead }: { lead: Lead }) {
+export function LeadDetailView({
+  lead,
+  onStatusChange,
+  isStatusUpdating,
+  statusUpdateError,
+}: {
+  lead: Lead;
+  onStatusChange: (status: LeadStatus) => void;
+  isStatusUpdating: boolean;
+  statusUpdateError: string | null;
+}) {
   const router = useRouter();
 
   const handleCreateQuote = () => {
@@ -45,7 +55,14 @@ export function LeadDetailView({ lead }: { lead: Lead }) {
         >
           <LeadInfoCard lead={lead} />
           <MapCard lead={lead} />
-          <QuoteActionsCard leadId={lead.id} onCreateQuote={handleCreateQuote} />
+          <QuoteActionsCard
+            leadId={lead.id}
+            onCreateQuote={handleCreateQuote}
+            leadStatus={lead.status}
+            onStatusChange={onStatusChange}
+            isStatusUpdating={isStatusUpdating}
+            statusUpdateError={statusUpdateError}
+          />
         </ScrollView>
       </ThemedView>
     </SafeAreaView>

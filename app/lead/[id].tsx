@@ -35,7 +35,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ErrorCard } from '@/components/ui/ErrorCard';
 import { InboxSkeleton } from '@/components/ui/InboxSkeleton';
 import { LeadDetailView } from '@/components/ui/LeadDetailView';
-import type { Lead } from '@/models/Lead';
+import type { Lead, LeadStatus } from '@/models/Lead';
 import { useLeadsRepo } from '@/services/leads/RepoProvider';
 
 export default function LeadDetailScreen() {
@@ -45,6 +45,8 @@ export default function LeadDetailScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lead, setLead] = useState<Lead | null>(null);
+  const [isStatusUpdating, setIsStatusUpdating] = useState<boolean>(false);
+  const [statusUpdateError, setStatusUpdateError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     // Miksi guard: jos route-parametri puuttuu, ei kutsuta repositorya turhaan.
@@ -86,6 +88,36 @@ export default function LeadDetailScreen() {
     }, [load])
   );
 
+  /**
+   * Päivittää liidin statuksen repositoryn kautta ja päivittää UI:n.
+   *
+   * Miksi täällä:
+   * - Screen omistaa datan ja repon, joten päivitys tehdään täällä eikä UI-komponentissa.
+   */
+  const handleStatusChange = useCallback(
+    async (status: LeadStatus) => {
+      if (!lead || status === lead.status) {
+        return;
+      }
+
+      setIsStatusUpdating(true);
+      setStatusUpdateError(null);
+
+      try {
+        await repo.updateLeadStatus(lead.id, status);
+        setLead((prev) => (prev ? { ...prev, status } : prev));
+      } catch (error: unknown) {
+        console.error('LeadDetail: updateLeadStatus epäonnistui', error);
+        const message =
+          error instanceof Error ? error.message : 'Virhe statuksen päivittämisessä';
+        setStatusUpdateError(message);
+      } finally {
+        setIsStatusUpdating(false);
+      }
+    },
+    [lead, repo]
+  );
+
   const interimTitle = id ? `Lead ${id}` : 'Lead';
 
 
@@ -124,7 +156,12 @@ export default function LeadDetailScreen() {
       <Stack.Screen options={{ title: `Lead ${lead.id}` }} />
 
       <ThemedView style={styles.screen}>
-        <LeadDetailView lead={lead} />
+        <LeadDetailView
+          lead={lead}
+          onStatusChange={handleStatusChange}
+          isStatusUpdating={isStatusUpdating}
+          statusUpdateError={statusUpdateError}
+        />
       </ThemedView>
     </>
   );
