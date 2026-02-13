@@ -2,10 +2,12 @@
 
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
 import { LeadInfoCard } from '@/components/ui/LeadInfoCard';
+import { MapCard } from '@/components/ui/MapCard';
 import { QuoteActionsCard } from '@/components/ui/QuoteActionsCard';
 import type { Lead } from '@/models/Lead';
 
@@ -34,16 +36,33 @@ export function LeadDetailView({ lead }: { lead: Lead }) {
   };
 
   return (
-    <ThemedView style={styles.screen}>
-      <LeadInfoCard lead={lead} />
-      <QuoteActionsCard leadId={lead.id} onCreateQuote={handleCreateQuote} />
-    </ThemedView>
+    <SafeAreaView style={styles.safeArea}>
+      <ThemedView style={styles.screen}>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={true}
+        >
+          <LeadInfoCard lead={lead} />
+          <MapCard lead={lead} />
+          <QuoteActionsCard leadId={lead.id} onCreateQuote={handleCreateQuote} />
+        </ScrollView>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   screen: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
     padding: 16,
     gap: 10,
   },
