@@ -22,7 +22,7 @@ import { ThemedView } from '@/components/themed-view';
 import { DistanceDisplay } from '@/components/ui/DistanceDisplay';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import type { Lead } from '@/models/Lead';
+import type { Lead } from '@/models/Lead';+
 
 export function MapCard({ lead }: { lead: Lead }) {
   const backgroundColor = useThemeColor({}, 'background');
