@@ -7,6 +7,7 @@
  * - Laskee etäisyyden Haversine-kaavalla kun molemmat koordinaatit ovat saatavilla
  * - Näyttää etäisyyden kilometreinä (1 desimaalin tarkkuudella)
  * - Näyttää fallback-viestit eri tilanteissa:
+ *   - Odotetaan sijaintilupaa (undetermined tai null)
  *   - Sijaintilupa evätty
  *   - Haetaan sijaintia
  *   - Liidin koordinaatit puuttuvat
@@ -64,6 +65,13 @@ export function DistanceDisplay({
       {distance !== null && (
         <ThemedText style={[styles.distanceText, { color: tintColor }]}>
           📏 Etäisyys: {distance.toFixed(1)} km
+        </ThemedText>
+      )}
+
+      {/* Odotetaan sijaintilupaa */}
+      {(locationPermission === null || locationPermission === 'undetermined') && (
+        <ThemedText style={[styles.hint, { color: tintColor }]}>
+          Odotetaan sijaintilupaa...
         </ThemedText>
       )}
 

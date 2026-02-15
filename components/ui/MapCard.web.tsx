@@ -1,24 +1,22 @@
 /**
- * MapCard-komponentti
+ * MapCard-komponentti (WEB-versio)
  *
- * Näyttää liidin sijainnin kartalla käyttäen react-native-maps natiivia karttakomponenttia.
+ * Näyttää liidin sijainnin kartalla web-alustalla.
  *
  * Toiminnallisuus:
- * - Natiiveilla alustoilla (iOS/Android): Näyttää MapView-kartan markerilla
- * - Web-alustalla: Näyttää yksinkertaistetun kortin koordinaateilla (MapView ei toimi webissä)
+ * - Näyttää upotettuna OpenStreetMap-kartan iframe:ssa
+ * - Näyttää koordinaatit ja etäisyyden
+ * - Painike ulkoisen karttasovelluksen avaamiseen
  * - Käyttää useUserLocation-hookia sijaintitietojen hakemiseen
  * - Käyttää DistanceDisplay-komponenttia etäisyyden näyttämiseen
  * - Jos lat/lng puuttuu: näytetään selkeä virheilmoitus
  *
- * Huom:
- * - react-native-maps toimii Expo Go:ssa (sisältyy Expo Go runtimeen)
- * - Web-alustalla MapView ei ole tuettu, näytetään staattinen kortti
+ * Huom: Web-alustalla käytetään iframe:a OpenStreetMapin näyttämiseen
  */
 
 import * as Linking from 'expo-linking';
 import React from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -38,9 +36,6 @@ export function MapCard({ lead }: { lead: Lead }) {
   // Tarkistetaan, onko koordinaatit saatavilla
   const hasCoordinates = lead.lat !== undefined && lead.lng !== undefined;
 
-  /**
-   * Avaa sijainnin ulkoisessa kartassa (Google Maps)
-   */
   const handleOpenMap = () => {
     if (!hasCoordinates) return;
     const mapsUrl = `https://maps.google.com/?q=${lead.lat},${lead.lng}`;
@@ -49,8 +44,8 @@ export function MapCard({ lead }: { lead: Lead }) {
     });
   };
 
-  // Jos koordinaatteja ei ole, näytetään varoituskortti
   if (!hasCoordinates) {
+    // Fallback: näytetään selkeä viesti, jos koordinaatteja ei ole
     return (
       <ThemedView style={[styles.card, { backgroundColor }]}>
         <ThemedText style={[styles.label, { color: textColor }]}>
@@ -71,53 +66,10 @@ export function MapCard({ lead }: { lead: Lead }) {
     );
   }
 
-  // Web-alustalla: näytetään yksinkertainen kortti koordinaateilla ja linkki
-  // (MapView ei toimi webissä)
-  if (Platform.OS === 'web') {
-    return (
-      <ThemedView style={[styles.card, { backgroundColor }]}>
-        <ThemedText style={[styles.label, { color: textColor }]}>
-          📍 Sijainti
-        </ThemedText>
-        <ThemedText style={[styles.address, { color: textColor }]}>
-          {lead.address || 'Osoitetta ei saatavilla'}
-        </ThemedText>
-        <ThemedView style={styles.coordinatesContainer}>
-          <ThemedText style={[styles.coordinatesLabel, { color: tintColor }]}>
-            Koordinaatit: {lead.lat?.toFixed(6)}, {lead.lng?.toFixed(6)}
-          </ThemedText>
-        </ThemedView>
-        <DistanceDisplay
-          userLocation={userLocation}
-          leadLat={lead.lat}
-          leadLng={lead.lng}
-          locationPermission={locationPermission}
-          isLoading={isLoading}
-        />
-        <Pressable 
-          onPress={handleOpenMap}
-          style={({ pressed }) => [
-            styles.mapButton,
-            { backgroundColor: tintColor, opacity: pressed ? 0.7 : 1 }
-          ]}
-        >
-          <ThemedText style={styles.mapButtonText}>
-            Avaa kartalla
-          </ThemedText>
-        </Pressable>
-      </ThemedView>
-    );
-  }
-
-  // iOS/Android: näytetään natiivikartta (MapView)
-  // Kartta-alueen määritys liidin koordinaateilla
-  const mapRegion: Region = {
-    latitude: lead.lat!,
-    longitude: lead.lng!,
-    latitudeDelta: 0.015,
-    longitudeDelta: 0.01,
-  };
-
+  // Web-alustalla: näytetään OpenStreetMap iframe:ssa
+  // OpenStreetMap tukee suoraa iframe-upotusta koordinaateilla
+  const osmIframeUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lead.lng! - 0.01},${lead.lat! - 0.01},${lead.lng! + 0.01},${lead.lat! + 0.01}&layer=mapnik&marker=${lead.lat},${lead.lng}`;
+  
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <ThemedView style={styles.header}>
@@ -142,25 +94,28 @@ export function MapCard({ lead }: { lead: Lead }) {
         />
       </ThemedView>
 
-      {/* Natiivikartta react-native-mapsilla */}
-      <MapView
-        style={styles.map}
-        region={mapRegion}
-        scrollEnabled={true}
-        zoomEnabled={true}
-        pitchEnabled={true}
-        rotateEnabled={true}
-      >
-        <Marker
-          coordinate={{
-            latitude: lead.lat!,
-            longitude: lead.lng!,
-          }}
-          title={lead.title}
-          description={lead.address}
-          pinColor="red"
+      {/* OpenStreetMap iframe */}
+      <View style={styles.mapContainer}>
+        <iframe
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          src={osmIframeUrl}
+          title="OpenStreetMap"
         />
-      </MapView>
+      </View>
+
+      <Pressable 
+        onPress={handleOpenMap}
+        style={({ pressed }) => [
+          styles.mapButton,
+          { backgroundColor: tintColor, opacity: pressed ? 0.7 : 1 }
+        ]}
+      >
+        <ThemedText style={styles.mapButtonText}>
+          Avaa ulkoisessa kartassa
+        </ThemedText>
+      </Pressable>
     </ThemedView>
   );
 }
@@ -170,12 +125,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 8,
     overflow: 'hidden',
-    height: 300,
   },
   header: {
     padding: 12,
     gap: 6,
-    zIndex: 10,
   },
   card: {
     padding: 12,
@@ -211,14 +164,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
-  map: {
-    flex: 1,
+  mapContainer: {
+    width: '100%',
+    height: 300,
   },
   mapButton: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 0,
     alignItems: 'center',
-    marginTop: 8,
   },
   mapButtonText: {
     color: '#fff',
