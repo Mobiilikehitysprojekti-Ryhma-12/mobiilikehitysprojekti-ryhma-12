@@ -26,6 +26,142 @@ type DistanceBucket = {
   color: string;
 };
 
+// Donut chart visualisointi aluejakaumalle
+// Käyttää yksinkertaista segmentti-tekniikkaa
+type SimplePieChartProps = {
+  buckets: DistanceBucket[];
+  total: number;
+  colorScheme: 'light' | 'dark' | null | undefined;
+};
+
+// Yksittäinen donut-segmentti
+type DonutSegmentProps = {
+  percentage: number;
+  color: string;
+  rotation: number;
+  size: number;
+  strokeWidth: number;
+};
+
+function DonutSegment({ percentage, color, rotation, size, strokeWidth }: DonutSegmentProps) {
+  // Lasketaan segmentin kulma asteet (max 360)
+  const degrees = Math.min((percentage / 100) * 360, 360);
+  
+  // Jos segmentti on alle 1%, ei näytetä
+  if (percentage < 1) return null;
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        width: size,
+        height: size,
+        transform: [{ rotate: `${rotation}deg` }],
+      }}
+    >
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: strokeWidth,
+          borderColor: 'transparent',
+          borderTopColor: color,
+          borderRightColor: degrees >= 90 ? color : 'transparent',
+          borderBottomColor: degrees >= 180 ? color : 'transparent',
+          borderLeftColor: degrees >= 270 ? color : 'transparent',
+        }}
+      />
+    </View>
+  );
+}
+
+function SimplePieChart({ buckets, total, colorScheme }: SimplePieChartProps) {
+  const size = 180;
+  const strokeWidth = 40;
+
+  // Lasketaan segmenttien rotaatiot
+  let currentRotation = -90; // Aloitetaan yläreunasta (12 o'clock)
+  const segments = buckets.map((bucket) => {
+    const percentage = (bucket.count / total) * 100;
+    const degrees = (percentage / 100) * 360;
+    const rotation = currentRotation;
+    currentRotation += degrees;
+    return {
+      ...bucket,
+      percentage,
+      rotation,
+    };
+  });
+
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <View style={{ width: size, height: size, position: 'relative' }}>
+        {/* Taustarengas */}
+        <View
+          style={{
+            position: 'absolute',
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: strokeWidth,
+            borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+          }}
+        />
+
+        {/* Piirretään segmentit */}
+        {segments.map((segment) => (
+          <DonutSegment
+            key={segment.label}
+            percentage={segment.percentage}
+            color={segment.color}
+            rotation={segment.rotation}
+            size={size}
+            strokeWidth={strokeWidth}
+          />
+        ))}
+
+        {/* Keskiympyrä - luo donut-efektin */}
+        <View
+          style={{
+            position: 'absolute',
+            width: size - strokeWidth * 2,
+            height: size - strokeWidth * 2,
+            borderRadius: (size - strokeWidth * 2) / 2,
+            backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
+            top: strokeWidth,
+            left: strokeWidth,
+            alignItems: 'center',
+            justifyContent: 'center',
+            elevation: 3,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+          }}
+        >
+          <Text
+            style={[
+              styles.pieCenterText,
+              { color: colorScheme === 'dark' ? '#ECEDEE' : '#11181C' },
+            ]}
+          >
+            {total}
+          </Text>
+          <Text
+            style={[
+              styles.pieCenterSubtext,
+              { color: colorScheme === 'dark' ? '#9BA1A6' : '#687076' },
+            ]}
+          >
+            sijaintia
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export function LocationChart({ leads, colorScheme }: LocationChartProps) {
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
@@ -104,6 +240,16 @@ export function LocationChart({ leads, colorScheme }: LocationChartProps) {
       {locationStats.hasData && locationStats.buckets.length > 0 && (
         <>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Aluejakauma</Text>
+          
+          {/* Pie Chart visualisointi - yksinkertainen donut-tyyli */}
+          <View style={styles.pieChartContainer}>
+            <SimplePieChart 
+              buckets={locationStats.buckets} 
+              total={locationStats.withLocation}
+              colorScheme={colorScheme}
+            />
+          </View>
+
           <View style={styles.regionContainer}>
             {locationStats.buckets.map((bucket) => {
               const percentage =
@@ -168,6 +314,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
+  },
+  pieChartContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  pieCenterText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  pieCenterSubtext: {
+    fontSize: 12,
+    marginTop: 4,
   },
   regionContainer: {
     gap: 10,
