@@ -21,11 +21,21 @@ const STORAGE_KEY = 'qf:debug:flags';
 export interface DebugFlags {
   simulateError: boolean;
   simulateOffline: boolean;
+
+  /**
+   * Käytä FakeLeadsRepositoryä (demo/dev) Supabasen sijaan.
+   *
+   * Miksi tämä flagi:
+   * - Oletus halutaan Supabaseen ("oikea data"), mutta debugissa on hyödyllistä palata fake-dataan.
+   * - Vaihto tehdään RepoProviderissa ilman UI-muutoksia varsinaisissa ruuduissa.
+   */
+  useFakeLeadsRepo: boolean;
 }
 
 const DEFAULT_FLAGS: DebugFlags = {
   simulateError: false,
   simulateOffline: false,
+  useFakeLeadsRepo: false,
 };
 
 // In-memory state

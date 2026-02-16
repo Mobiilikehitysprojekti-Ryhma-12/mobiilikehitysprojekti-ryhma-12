@@ -40,6 +40,12 @@ export type Lead = {
 
   /** Asiakkaan nimi (valinnainen). */
   customerName?: string;
+
+  /** Asiakkaan puhelin (valinnainen). */
+  customerPhone?: string;
+
+  /** Omistava business/user id (RLS: business_id = auth.uid()). */
+  businessId?: string;
 };
 
 /**

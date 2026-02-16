@@ -10,27 +10,42 @@
  * - Hae repo hookilla `useLeadsRepo()` ruuduissa / viewmodelissa.
  */
 
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { ApiLeadsRepository } from './ApiLeadsRepository';
+import { getDebugFlags, subscribeDebugFlags } from '@/services/debugFlags';
+
 import { DebugLeadsRepository } from './DebugLeadsRepository';
 import { FakeLeadsRepository } from './FakeLeadsRepository';
 import type { LeadsRepository } from './LeadsRepository';
+import { SupabaseLeadsRepository } from './SupabaseLeadsRepository';
 
-// Dev-flag: pidä Fake päällä kunnes API on valmis.
-// Vaihda `false`, kun /leads endpointit toimii.
-const USE_FAKE_REPO = true;
+// Oletus: Supabase on "oikea" datalähde. Fake pidetään vain debug-tarkoitukseen.
+// Huom: ApiLeadsRepository-luokka on edelleen olemassa, jos haluatte myöhemmin myös HTTP-API-polun.
 
 const RepoContext = createContext<LeadsRepository | null>(null);
 
 export function RepoProvider({ children }: { children: React.ReactNode }) {
+  const [flags, setFlags] = useState(() => getDebugFlags());
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    // Miksi subscribe:
+    // - Debug-tabissa voidaan vaihtaa Fake <-> Supabase ilman appin restarttia.
+    return subscribeDebugFlags(setFlags);
+  }, []);
+
   const repo = useMemo<LeadsRepository>(() => {
     // Miksi memo:
     // - Estetään uuden repo-instanssin luonti jokaisella renderillä.
     // - Repo voi sisältää myöhemmin esim. cachea.
-    const baseRepo = USE_FAKE_REPO ? new FakeLeadsRepository() : new ApiLeadsRepository();
+
+    // Fake: nopea demo-data / kehitys.
+    // Supabase: "oikea" data. RLS varmistaa, että käyttäjä näkee vain omat rivit.
+    const baseRepo: LeadsRepository = __DEV__ && flags.useFakeLeadsRepo ? new FakeLeadsRepository() : new SupabaseLeadsRepository();
+
+    // Debug wrapper mahdollistaa virhe/offline -tilojen demonstroinnin myös Supabase-repolla.
     return __DEV__ ? new DebugLeadsRepository(baseRepo) : baseRepo;
-  }, []);
+  }, [flags.useFakeLeadsRepo]);
 
   return <RepoContext.Provider value={repo}>{children}</RepoContext.Provider>;
 }

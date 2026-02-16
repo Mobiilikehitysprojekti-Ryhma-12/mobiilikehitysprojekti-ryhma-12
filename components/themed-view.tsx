@@ -13,7 +13,8 @@ import React from 'react';
 import { View, type ViewProps } from 'react-native';
 import { useThemeColor } from '../hooks/use-theme-color';
 
-export interface ThemedViewProps extends ViewProps {}
+// Huom: type alias riittää tässä (eslint: no-empty-object-type).
+export type ThemedViewProps = ViewProps;
 
 /**
  * ThemedView komponentti

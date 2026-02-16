@@ -55,6 +55,15 @@ export default function DebugTab() {
 
         <View style={styles.divider} />
 
+        <ThemedText type="subtitle">Repository</ThemedText>
+        <Row
+          label="USE_FAKE_LEADS_REPO"
+          value={flags.useFakeLeadsRepo}
+          onChange={(v) => setDebugFlags({ useFakeLeadsRepo: v })}
+        />
+
+        <View style={styles.divider} />
+
         <ThemedText type="subtitle">Cache status</ThemedText>
         <ThemedText style={styles.meta}>Cached leads: {cacheItemsCount === null ? '…' : `${cacheItemsCount} items`}</ThemedText>
         <ThemedText style={styles.meta}>Last synced: {cacheLastSynced ?? '—'}</ThemedText>
