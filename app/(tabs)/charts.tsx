@@ -13,8 +13,9 @@
  * - Responsiivinen: sopii eri näyttöko'oille
  */
 
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 import { ErrorCard } from '@/components/ui/ErrorCard';
 import { InboxSkeleton } from '@/components/ui/InboxSkeleton';
@@ -35,13 +36,10 @@ export default function ChartsTab() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Haetaan leadit samalla tavalla kuin Inbox-tabissa
-  useEffect(() => {
-    loadLeads();
-  }, []);
-
-  async function loadLeads() {
+  // Funktio leadien lataamiseen
+  const loadLeads = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -52,12 +50,26 @@ export default function ChartsTab() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [repo]);
+
+  // Lataa leadit kun komponentti mountataan tai kun tab tulee fokukseen
+  useFocusEffect(
+    useCallback(() => {
+      loadLeads();
+    }, [loadLeads])
+  );
 
   // Retry-toiminto virhetilanteessa
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     loadLeads();
-  };
+  }, [loadLeads]);
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadLeads();
+    setRefreshing(false);
+  }, [loadLeads]);
 
   const styles = makeStyles(colorScheme);
 
@@ -103,7 +115,16 @@ export default function ChartsTab() {
 
   // Ready state - näytetään kaaviot
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colorScheme === 'dark' ? Colors.dark.tint : Colors.light.tint}
+        />
+      }
+    >
       <View style={styles.header}>
         <Text style={styles.title}>Tilastot</Text>
         <Text style={styles.subtitle}>{leads.length} liidiä</Text>
