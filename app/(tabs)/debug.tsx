@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
-
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { getDebugFlags, resetDebugFlags, setDebugFlags, subscribeDebugFlags } from '@/services/debugFlags';
 import { clearLeadsCache, loadCachedLeads } from '@/services/leads/leadsCache';
+import { triggerTestNotification } from '@/services/notifications/notificationService';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, Switch, View } from 'react-native';
 
 export default function DebugTab() {
   const [flags, setFlagsState] = useState(getDebugFlags());
@@ -70,6 +70,7 @@ export default function DebugTab() {
             style={styles.actionBtn}
           />
           <Button title="Refresh cache status" onPress={() => refreshCacheStatus()} style={styles.actionBtn} />
+          <Button title="Test Notification" onPress={triggerTestNotification}/>
         </View>
       </Card>
 

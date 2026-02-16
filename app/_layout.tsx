@@ -9,6 +9,10 @@ import { initDebugFlags } from '@/services/debugFlags';
 import { RepoProvider } from '@/services/leads/RepoProvider';
 import { QuoteProvider } from '@/services/quotes/QuoteProvider';
 
+import { useRouter } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { initNotifications, requestNotificationPermission } from '@/services/notifications/notificationService';
+
 /**
  * RootLayout (Expo Router)
  *
@@ -26,11 +30,48 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
 
+  // Debug-flägit
   useEffect(() => {
     initDebugFlags();
   }, []);
+
+  // P0 #70 + #72: Notification setup + deep linking
+  useEffect(() => {
+    console.log('🔔 Initializing notifications...');
+    
+    // TÄRKEÄÄ: Alusta handler ensin
+    initNotifications();
+    
+    // Sitten pyydä oikeudet
+    requestNotificationPermission();
+
+    // Kuuntele kun käyttäjä klikkaa notifikaatiota
+    // P0 #72: Notif tap → deep link oikeaan liidiin
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data;
+        const url = data.url as string;
+        
+        console.log('🔗 Notification tapped, deep linking to:', url);
+        console.log('📦 Notification data:', data);
+        
+        if (url) {
+          // Pieni viive varmistaa että app on varmasti auki
+          setTimeout(() => {
+            router.push(url as any);
+          }, 100);
+        }
+      }
+    );
+
+    return () => {
+      console.log('🧹 Cleaning up notification listener');
+      subscription.remove();
+    };
+  }, [router]);
 
   return (
     <RepoProvider>
@@ -46,4 +87,3 @@ export default function RootLayout() {
     </RepoProvider>
   );
 }
-
