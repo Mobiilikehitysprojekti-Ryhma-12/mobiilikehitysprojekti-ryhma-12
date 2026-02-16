@@ -15,7 +15,9 @@
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { LeadStatusSelector } from '@/components/ui/LeadStatusSelector';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import type { LeadStatus } from '@/models/Lead';
 import type { Quote } from '@/models/Quote';
 import { useQuotesRepo } from '@/services/quotes/QuoteProvider';
 import React, { useState } from 'react';
@@ -24,9 +26,20 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 interface QuoteActionsCardProps {
   leadId: string;
   onCreateQuote: () => void;
+  leadStatus: LeadStatus;
+  onStatusChange: (status: LeadStatus) => void;
+  isStatusUpdating: boolean;
+  statusUpdateError: string | null;
 }
 
-export function QuoteActionsCard({ leadId, onCreateQuote }: QuoteActionsCardProps) {
+export function QuoteActionsCard({
+  leadId,
+  onCreateQuote,
+  leadStatus,
+  onStatusChange,
+  isStatusUpdating,
+  statusUpdateError,
+}: QuoteActionsCardProps) {
   const quotesRepo = useQuotesRepo();
   const tintColor = useThemeColor({}, 'tint');
   const borderColor = useThemeColor({}, 'icon');
@@ -34,6 +47,7 @@ export function QuoteActionsCard({ leadId, onCreateQuote }: QuoteActionsCardProp
   const [checkQuoteLoading, setCheckQuoteLoading] = useState(false);
   const [checkQuoteError, setCheckQuoteError] = useState<string | null>(null);
   const [foundQuote, setFoundQuote] = useState<Quote | null>(null);
+  const [showStatusSelector, setShowStatusSelector] = useState(false);
 
   const handleCheckQuote = async () => {
     setCheckQuoteLoading(true);
@@ -59,6 +73,21 @@ export function QuoteActionsCard({ leadId, onCreateQuote }: QuoteActionsCardProp
     }
   };
 
+  // Huom: sama nappi avaa ja sulkee sekä tarkistuksen tulokset että status-valinnan.
+  const handleToggleCheck = () => {
+    const isExpanded = showStatusSelector || foundQuote !== null || checkQuoteError !== null;
+
+    if (isExpanded) {
+      setShowStatusSelector(false);
+      setFoundQuote(null);
+      setCheckQuoteError(null);
+      return;
+    }
+
+    setShowStatusSelector(true);
+    void handleCheckQuote();
+  };
+
   return (
     <Card style={styles.actionCard}>
       {/* Luo tarjous -painike */}
@@ -75,7 +104,7 @@ export function QuoteActionsCard({ leadId, onCreateQuote }: QuoteActionsCardProp
                 ? 'Piilota tiedot'
                 : 'Tarkista tarjouksen status'
             }
-            onPress={foundQuote ? () => setFoundQuote(null) : handleCheckQuote}
+            onPress={handleToggleCheck}
             disabled={checkQuoteLoading}
           />
         </View>
@@ -93,6 +122,15 @@ export function QuoteActionsCard({ leadId, onCreateQuote }: QuoteActionsCardProp
         <View style={[styles.errorContainer, { backgroundColor: '#ffebee' }]}>
           <ThemedText style={{ color: '#c62828' }}>{checkQuoteError}</ThemedText>
         </View>
+      )}
+
+      {showStatusSelector && (
+        <LeadStatusSelector
+          value={leadStatus}
+          onSelect={onStatusChange}
+          isSaving={isStatusUpdating}
+          errorMessage={statusUpdateError}
+        />
       )}
 
       {/* Tarjouksen tiedot jos löytyi */}

@@ -29,8 +29,10 @@ export type Lead = {
   /** Osoite tai alue (valinnainen). */
   address?: string;
 
-  /** Koordinaatit (valinnainen). Tallennetaan DB:ssä erikseen lat/lng. */
+  /** Sijainnin leveys (latitude). Käytetään kartanäkymään. */
   lat?: number;
+
+  /** Sijainnin pituus (longitude). Käytetään kartanäkymään. */
   lng?: number;
 
   /** ISO-muotoinen pvm/aikaleima (demo: "2026-01-28"). */

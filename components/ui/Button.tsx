@@ -38,7 +38,7 @@ export function Button({
       ]}
     >
       {leading ? <View style={styles.leading}>{leading}</View> : null}
-      <ThemedText type="defaultSemiBold">{loading ? 'Ladataan…' : title}</ThemedText>
+      <ThemedText type="subtitle">{loading ? 'Ladataan…' : title}</ThemedText>
     </Pressable>
   );
 }

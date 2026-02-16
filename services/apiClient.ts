@@ -1,52 +1,140 @@
 /**
- * services/apiClient.ts
- *
- * Alimman tason HTTP-asiakas.
- *
- * Tärkeä periaate:
- * - UI ei kutsu tätä suoraan.
- * - Repositoriot (esim. ApiLeadsRepository) käyttävät tätä.
- *
- * Sprint 1 demo:
- * - SIMULATE_ERROR=true -> virhetila + Retry on helppo demonstroida.
+ * apiClient — HTTP-kutsujen perustoteutus
+ * 
+ * Tarkoitus:
+ * - Tarjoaa yhtenäisen tavan tehdä API-kutsuja
+ * - Sisältää base URL:n ja yleiset headerit
+ * - Käsittelee virheet yhdenmukaisesti
+ * 
+ * HUOM: UI-koodi EI käytä apiClientia suoraan!
+ * - UI käyttää Repositoryjä (LeadsRepository, QuotesRepository)
+ * - Repositoryt käyttävät apiClientia sisäisesti
+ * 
+ * Dev-flagit:
+ * - SIMULATE_ERROR: simuloi virhettä (demoa varten)
  */
 
-import { getDebugFlags } from '@/services/debugFlags';
+/**
+ * BASE_URL — API:n perus-URL
+ * 
+ * Tuotantoa varten:
+ * - Vaihda oikea backend-osoite (esim. "https://api.quoteflow.example.com")
+ * - Tai käytä ympäristömuuttujaa: process.env.EXPO_PUBLIC_API_BASE_URL
+ */
+const BASE_URL = 'http://localhost:3000/api'; // Placeholder - päivitä oikea osoite
 
-// TODO: lisää oikea base URL, kun backend on varmistunut.
-const BASE_URL = '';
-
-// Demoa varten: laita true -> ErrorCard + Retry näkyy varmasti videolla.
+/**
+ * Dev-flag: Simuloi virhe jokaisessa API-kutsussa
+ * 
+ * Käyttö demossa:
+ * - Aseta `true` jotta ErrorCard + Retry näkyy luotettavasti
+ * - Vaatii että USE_FAKE_REPO = false (RepoProvider.tsx)
+ */
 const SIMULATE_ERROR = false;
 
+/**
+ * getJson — Hakee JSON-dataa GET-requestilla
+ * 
+ * @param path - API-polku (esim. "/leads")
+ * @returns Promise joka resolvataan JSON-dataan
+ * @throws Error jos HTTP-status ei ole 200-299 tai verkkovirhe
+ */
 export async function getJson<T>(path: string): Promise<T> {
-  const f = __DEV__ ? getDebugFlags() : { simulateError: false, simulateOffline: false };
-
-  if (f.simulateOffline) {
-    throw new Error('OFFLINE_SIMULATED');
+  if (SIMULATE_ERROR) {
+    throw new Error('[SIMULOITU VIRHE] apiClient: SIMULATE_ERROR on päällä');
   }
 
-  if (SIMULATE_ERROR || f.simulateError) {
-    throw new Error('Simuloitu API-virhe (SIMULATE_ERROR=true)');
+  const url = `${BASE_URL}${path}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Lisää tarvittaessa: 'Authorization': `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as T;
+  } catch (error: unknown) {
+    console.error(`[apiClient] GET ${path} epäonnistui:`, error);
+    throw error;
   }
-
-  const url = BASE_URL ? `${BASE_URL}${path}` : path;
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`API ${response.status}: ${text || response.statusText}`);
-  }
-
-  return (await response.json()) as T;
 }
 
-// Säilytetään vanha export minimimuutoksella.
-// (Jos tätä ei enää käytetä, se voidaan poistaa myöhemmin refaktorissa.)
-export async function fetchLeads() {
-  return [];
+/**
+ * postJson — Lähettää JSON-dataa POST-requestilla
+ * 
+ * @param path - API-polku (esim. "/quotes")
+ * @param body - Lähetettävä data (serialisoidaan JSON:ksi)
+ * @returns Promise joka resolvataan vastaukseen (JSON)
+ * @throws Error jos HTTP-status ei ole 200-299 tai verkkovirhe
+ */
+export async function postJson<T>(path: string, body: unknown): Promise<T> {
+  if (SIMULATE_ERROR) {
+    throw new Error('[SIMULOITU VIRHE] apiClient: SIMULATE_ERROR on päällä');
+  }
+
+  const url = `${BASE_URL}${path}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as T;
+  } catch (error: unknown) {
+    console.error(`[apiClient] POST ${path} epäonnistui:`, error);
+    throw error;
+  }
+}
+
+/**
+ * patchJson — Päivittää dataa PATCH-requestilla
+ * 
+ * @param path - API-polku (esim. "/leads/123/status")
+ * @param body - Lähetettävä data (serialisoidaan JSON:ksi)
+ * @returns Promise joka resolvataan vastaukseen (JSON)
+ * @throws Error jos HTTP-status ei ole 200-299 tai verkkovirhe
+ */
+export async function patchJson<T>(path: string, body: unknown): Promise<T> {
+  if (SIMULATE_ERROR) {
+    throw new Error('[SIMULOITU VIRHE] apiClient: SIMULATE_ERROR on päällä');
+  }
+
+  const url = `${BASE_URL}${path}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as T;
+  } catch (error: unknown) {
+    console.error(`[apiClient] PATCH ${path} epäonnistui:`, error);
+    throw error;
+  }
 }

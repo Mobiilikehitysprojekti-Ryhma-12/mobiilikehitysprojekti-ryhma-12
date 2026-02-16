@@ -25,7 +25,7 @@ export function LeadListItem({ lead, onPress }: { lead: Lead; onPress: () => voi
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.outer}>
       <Card style={[styles.card, { borderColor }]}>
         <View style={styles.top}>
-          <ThemedText type="defaultSemiBold" numberOfLines={1} style={{ flex: 1 }}>
+          <ThemedText type="subtitle" numberOfLines={1} style={{ flex: 1 }}>
             {lead.title}
           </ThemedText>
 
