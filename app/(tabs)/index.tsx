@@ -11,7 +11,7 @@
  * Sprint 2 P1 (#43): Offline-indikaattori (Ahvko) - integroitu NetInfo
  */
 
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
@@ -42,6 +42,13 @@ export default function InboxTab() {
     return () => unsubscribe();
   }, []);
   // ===== END #43 =====
+
+  // Lataa data kun tab tulee fokukseen (esim. kun palataan takaisin toisesta näkymästä)
+  useFocusEffect(
+    useCallback(() => {
+      vm.refresh();
+    }, [vm])
+  );
 
   // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
