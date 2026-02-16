@@ -3,6 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type DebugFlags = {
   simulateError: boolean;
   simulateOffline: boolean;
+
+  /**
+   * Käytä FakeLeadsRepositoryä (demo/dev) Supabasen sijaan.
+   *
+   * Miksi tämä flagi:
+   * - Oletus halutaan Supabaseen ("oikea data"), mutta debugissa on hyödyllistä palata fake-dataan.
+   * - Vaihto tehdään RepoProviderissa ilman UI-muutoksia varsinaisissa ruuduissa.
+   */
+  useFakeLeadsRepo: boolean;
 };
 
 const STORAGE_KEY = 'quoteFlow:debugFlags';
@@ -10,6 +19,7 @@ const STORAGE_KEY = 'quoteFlow:debugFlags';
 const DEFAULT_FLAGS: DebugFlags = {
   simulateError: false,
   simulateOffline: false,
+  useFakeLeadsRepo: false,
 };
 
 let flags: DebugFlags = { ...DEFAULT_FLAGS };

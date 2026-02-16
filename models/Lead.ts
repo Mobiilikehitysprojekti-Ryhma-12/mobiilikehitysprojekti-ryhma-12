@@ -29,11 +29,21 @@ export type Lead = {
   /** Osoite tai alue (valinnainen). */
   address?: string;
 
+  /** Koordinaatit (valinnainen). Tallennetaan DB:ssä erikseen lat/lng. */
+  lat?: number;
+  lng?: number;
+
   /** ISO-muotoinen pvm/aikaleima (demo: "2026-01-28"). */
   createdAt: string;
 
   /** Asiakkaan nimi (valinnainen). */
   customerName?: string;
+
+  /** Asiakkaan puhelin (valinnainen). */
+  customerPhone?: string;
+
+  /** Omistava business/user id (RLS: business_id = auth.uid()). */
+  businessId?: string;
 };
 
 /**

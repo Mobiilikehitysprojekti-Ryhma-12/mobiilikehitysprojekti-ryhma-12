@@ -52,6 +52,47 @@ We use a Repository interface + Context “DI” (Hilt mindset in RN): UI never 
 
 To force an error state for video/demo, set `SIMULATE_ERROR = true` in `services/apiClient.ts` and use API repo (`USE_FAKE_REPO = false`).
 
+## Epic 1: Supabase Auth (Login / Logout)
+
+This app includes a minimal email+password authentication flow using Supabase.
+
+### 1) Configure environment variables
+
+1. Copy the example env file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   (On Windows you can just create `.env` manually and copy the same keys.)
+
+2. Fill in your Supabase values:
+
+   - `EXPO_PUBLIC_SUPABASE_URL` (Project Settings → API → Project URL)
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY` (Project Settings → API → Project API keys → anon public)
+
+3. Restart Expo after changing env vars:
+
+   ```bash
+   npx expo start -c
+   ```
+
+### 2) Create a test user in Supabase
+
+In Supabase Dashboard:
+- Authentication → Users → **Add user**
+- Set email + password
+
+### 3) Test the flow
+
+- If you are **not** logged in, the app redirects to `/login`.
+- With correct credentials, you are redirected to the tabs.
+- In the **Asetukset** tab you can see the logged-in user email/id and press **Kirjaudu ulos**.
+
+Notes:
+- Session is persisted on device storage (AsyncStorage). Logout clears it so a restart will not auto-login.
+- If env vars are missing, the app still starts but Login shows an error message.
+
 ## Architecture (Repository + Context DI)
 
 High-level folder map:
