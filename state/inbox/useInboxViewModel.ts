@@ -15,6 +15,7 @@ import type { Lead, LeadStatus } from '@/models/Lead';
 import { getDebugFlags, subscribeDebugFlags } from '@/services/debugFlags';
 import { loadCachedLeads, saveCachedLeads } from '@/services/leads/leadsCache';
 import type { LeadsRepository } from '@/services/leads/LeadsRepository';
+import { triggerLeadNotification } from '@/services/notifications/notificationService';
 
 export type InboxFilters = {
   /** Tekstihaku: etsitään otsikosta (title). */
@@ -100,7 +101,23 @@ export function useInboxViewModel(repo: LeadsRepository) {
       setErrorMessage(null);
 
       try {
+        // Tallenna vanhat lead ID:t ennen refreshiä
+        const oldLeadIds = new Set(rawItems.map((lead) => lead.id));
+
         const items = await repo.listLeads();
+        
+        // Tunnista uudet liidit (joita ei ollut vanhassa setissä)
+        const newLeads = items.filter((lead) => !oldLeadIds.has(lead.id));
+        
+        // Lähetä notifikaatio jokaisesta uudesta liidistä
+        // Huom: notifikaatio lähetetään vain jos asiakkaan nimi on määritelty
+        newLeads.forEach((lead) => {
+          if (lead.customerName) {
+            console.log('🔔 New lead detected, sending notification:', lead.id);
+            triggerLeadNotification(lead.id, lead.customerName);
+          }
+        });
+
         setRawItems(items);
         setDataSource('network');
 
@@ -116,7 +133,7 @@ export function useInboxViewModel(repo: LeadsRepository) {
         if (showLoading) setIsLoading(false);
       }
     },
-    [isOffline, repo]
+    [isOffline, repo, rawItems]
   );
 
   const refresh = useCallback(async () => {
