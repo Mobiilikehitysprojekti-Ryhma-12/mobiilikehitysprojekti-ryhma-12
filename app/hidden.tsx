@@ -14,7 +14,23 @@
 
 import { Stack, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Platform, StyleSheet, View } from 'react-native';
+
+/**
+ * Webissä Alert.alert ei toimi (React Native Web). Käytetään window.confirm.
+ */
+function confirmAction(title: string, message: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') {
+    if (window.confirm(`${title}\n\n${message}`)) {
+      onConfirm();
+    }
+  } else {
+    Alert.alert(title, message, [
+      { text: 'Peruuta', style: 'cancel' },
+      { text: 'Vahvista', style: 'destructive', onPress: onConfirm },
+    ]);
+  }
+}
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -58,30 +74,27 @@ export default function HiddenLeadsScreen() {
 
   const handleUnhide = useCallback(
     (lead: Lead) => {
-      Alert.alert(
+      confirmAction(
         'Palauta tarjouspyyntö?',
         'Palautettu tarjouspyyntö näkyy taas Inboxissa.',
-        [
-          { text: 'Peruuta', style: 'cancel' },
-          {
-            text: 'Palauta',
-            onPress: async () => {
-              setIsMutating(true);
-              try {
-                await repo.unhideLead(lead.id);
-                // Päivitetään cachea, jotta Inbox voi näyttää palautetun liidin heti.
-                await upsertLeadInCachedList({ ...lead, isHidden: false });
-                await refresh();
-              } catch (error: unknown) {
-                console.error('HiddenLeads: unhideLead epäonnistui', error);
-                const message = error instanceof Error ? error.message : 'Virhe palautuksessa';
-                Alert.alert('Virhe', message);
-              } finally {
-                setIsMutating(false);
-              }
-            },
-          },
-        ]
+        async () => {
+          setIsMutating(true);
+          try {
+            await repo.unhideLead(lead.id);
+            await upsertLeadInCachedList({ ...lead, isHidden: false });
+            await refresh();
+          } catch (error: unknown) {
+            console.error('HiddenLeads: unhideLead epäonnistui', error);
+            const message = error instanceof Error ? error.message : 'Virhe palautuksessa';
+            if (Platform.OS === 'web') {
+              window.alert(`Virhe: ${message}`);
+            } else {
+              Alert.alert('Virhe', message);
+            }
+          } finally {
+            setIsMutating(false);
+          }
+        }
       );
     },
     [refresh, repo]
@@ -89,30 +102,27 @@ export default function HiddenLeadsScreen() {
 
   const handleDelete = useCallback(
     (lead: Lead) => {
-      Alert.alert(
+      confirmAction(
         'Poista pysyvästi?',
         'Tämä poistaa tarjouspyynnön tietokannasta. Toimintoa ei voi perua.',
-        [
-          { text: 'Peruuta', style: 'cancel' },
-          {
-            text: 'Poista',
-            style: 'destructive',
-            onPress: async () => {
-              setIsMutating(true);
-              try {
-                await repo.deleteLead(lead.id);
-                await removeLeadFromCachedList(lead.id);
-                await refresh();
-              } catch (error: unknown) {
-                console.error('HiddenLeads: deleteLead epäonnistui', error);
-                const message = error instanceof Error ? error.message : 'Virhe poistossa';
-                Alert.alert('Virhe', message);
-              } finally {
-                setIsMutating(false);
-              }
-            },
-          },
-        ]
+        async () => {
+          setIsMutating(true);
+          try {
+            await repo.deleteLead(lead.id);
+            await removeLeadFromCachedList(lead.id);
+            await refresh();
+          } catch (error: unknown) {
+            console.error('HiddenLeads: deleteLead epäonnistui', error);
+            const message = error instanceof Error ? error.message : 'Virhe poistossa';
+            if (Platform.OS === 'web') {
+              window.alert(`Virhe: ${message}`);
+            } else {
+              Alert.alert('Virhe', message);
+            }
+          } finally {
+            setIsMutating(false);
+          }
+        }
       );
     },
     [refresh, repo]

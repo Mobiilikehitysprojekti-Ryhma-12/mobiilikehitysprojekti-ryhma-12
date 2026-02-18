@@ -19,7 +19,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { Stack } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useRef, useState } from 'react';
-import { Alert, Platform, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, Share, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { ThemedText } from '@/components/themed-text';
@@ -61,6 +61,18 @@ export default function ShareScreen() {
   const onShareLink = async () => {
     setErrorMessage(null);
     setInfoMessage(null);
+
+    // Webissä Share.share ei avaa jakoikkunaa — käytetään Clipboard API:a ja ilmoitetaan käyttäjälle.
+    if (Platform.OS === 'web') {
+      try {
+        await navigator.clipboard.writeText(customerUrl);
+        setInfoMessage('Linkki kopioitu leikepöydälle!');
+      } catch {
+        // Clipboard API voi vaatia HTTPS / käyttöluvan — fallback: näytetään linkki promptissa.
+        window.prompt('Kopioi linkki:', customerUrl);
+      }
+      return;
+    }
 
     try {
       await Share.share({ message });
@@ -113,7 +125,7 @@ export default function ShareScreen() {
 
     // Webissä riittää että QR näkyy, koska natiivin tiedostojako ei ole luotettava/tuettu.
     if (Platform.OS === 'web') {
-      Alert.alert('Ei tuettu webissä', 'Webissä QR näkyy ruudulla, mutta PNG-jakaminen on tuettu vain iOS/Androidissa.');
+      window.alert('QR-koodi näkyy ruudulla. PNG-jakaminen on tuettu vain iOS/Androidissa.');
       return;
     }
 
@@ -139,7 +151,7 @@ export default function ShareScreen() {
     setInfoMessage(null);
 
     if (Platform.OS === 'web') {
-      Alert.alert('Ei tuettu webissä', 'Webissä QR näkyy ruudulla, mutta PNG-tallennus on tuettu vain iOS/Androidissa.');
+      window.alert('QR-koodi näkyy ruudulla. PNG-tallennus on tuettu vain iOS/Androidissa.');
       return;
     }
 

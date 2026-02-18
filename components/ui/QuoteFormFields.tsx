@@ -19,7 +19,7 @@ import { Radii, Spacing } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import type { QuoteFormData } from '@/models/Quote';
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
 interface QuoteFormFieldsProps {
@@ -45,7 +45,29 @@ export function QuoteFormFields({
 
   const openDatePicker = () => {
     if (isSubmitting) return;
+
+    // Webissä RN Modal käyttää aria-hidden -logiikkaa. Jos fokus jää taustalla olevaan nappiin,
+    // selain voi varoittaa (aria-hidden + focused element). Blurrataan fokus ennen modalin avaamista.
+    if (Platform.OS === 'web') {
+      try {
+        (document.activeElement as HTMLElement | null)?.blur?.();
+      } catch {
+        // Best-effort.
+      }
+    }
+
     setIsDatePickerOpen(true);
+
+    // Klikki voi fokusoida nappia vasta handlerin jälkeen -> blur vielä seuraavassa tickissä.
+    if (Platform.OS === 'web') {
+      setTimeout(() => {
+        try {
+          (document.activeElement as HTMLElement | null)?.blur?.();
+        } catch {
+          // Best-effort.
+        }
+      }, 0);
+    }
   };
 
   const closeDatePicker = () => {
@@ -127,7 +149,7 @@ export function QuoteFormFields({
             Huom: pointerEvents="none" tekee Inputista "vain näyttö" -kentän.
             Näin painallus osuu Pressableen ja avaa kalenterin.
           */}
-          <View pointerEvents="none">
+          <View style={{ pointerEvents: 'none' }}>
             <Input
               placeholder="Valitse päivä kalenterista (YYYY-MM-DD)"
               value={formData.estimatedStartDate}

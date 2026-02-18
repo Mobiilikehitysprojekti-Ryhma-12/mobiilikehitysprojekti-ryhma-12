@@ -127,34 +127,70 @@ export class SupabaseLeadsRepository implements LeadsRepository {
   }
 
   async updateLeadStatus(leadId: string, status: LeadStatus): Promise<void> {
-    const { error } = await this.client.from('leads').update({ status }).eq('id', leadId);
+    // Huom: Supabase voi RLS-tilanteissa palauttaa "0 riviä päivitetty" ilman virhettä.
+    // Siksi haetaan palautteeksi päivitetty rivi ja varmistetaan, että muutos oikeasti tapahtui.
+    const { data, error } = await this.client
+      .from('leads')
+      .update({ status })
+      .eq('id', leadId)
+      .select('id');
 
-    if (error) {
-      throw new Error(`Supabase updateLeadStatus epäonnistui: ${error.message}`);
+    if (error) throw new Error(`Supabase updateLeadStatus epäonnistui: ${error.message}`);
+
+    const updated = (data ?? []) as Array<{ id: string }>;
+    if (updated.length === 0) {
+      throw new Error(
+        'Liidin päivitys estyi (0 riviä päivitetty). Todennäköisin syy on Supabasen RLS/policyt tai puuttuva kirjautuminen.'
+      );
     }
   }
 
   async hideLead(leadId: string): Promise<void> {
-    const { error } = await this.client.from('leads').update({ is_hidden: true }).eq('id', leadId);
+    // Sama huomio kuin updateLeadStatus: RLS voi palauttaa 0 riviä ilman virhettä.
+    const { data, error } = await this.client
+      .from('leads')
+      .update({ is_hidden: true })
+      .eq('id', leadId)
+      .select('id');
 
-    if (error) {
-      throw new Error(`Supabase hideLead epäonnistui: ${error.message}`);
+    if (error) throw new Error(`Supabase hideLead epäonnistui: ${error.message}`);
+
+    const updated = (data ?? []) as Array<{ id: string }>;
+    if (updated.length === 0) {
+      throw new Error(
+        'Liidin piilotus estyi (0 riviä päivitetty). Tarkista että olet kirjautunut ja että RLS sallii UPDATE-operaation (business_id = auth.uid()).'
+      );
     }
   }
 
   async unhideLead(leadId: string): Promise<void> {
-    const { error } = await this.client.from('leads').update({ is_hidden: false }).eq('id', leadId);
+    const { data, error } = await this.client
+      .from('leads')
+      .update({ is_hidden: false })
+      .eq('id', leadId)
+      .select('id');
 
-    if (error) {
-      throw new Error(`Supabase unhideLead epäonnistui: ${error.message}`);
+    if (error) throw new Error(`Supabase unhideLead epäonnistui: ${error.message}`);
+
+    const updated = (data ?? []) as Array<{ id: string }>;
+    if (updated.length === 0) {
+      throw new Error(
+        'Liidin palautus estyi (0 riviä päivitetty). Tarkista että olet kirjautunut ja että RLS sallii UPDATE-operaation.'
+      );
     }
   }
 
   async deleteLead(leadId: string): Promise<void> {
-    const { error } = await this.client.from('leads').delete().eq('id', leadId);
+    // Delete-operaatio voi myös palauttaa 0 riviä ilman virhettä, jos RLS estää.
+    const { data, error } = await this.client.from('leads').delete().eq('id', leadId).select('id');
 
-    if (error) {
-      throw new Error(`Supabase deleteLead epäonnistui: ${error.message}`);
+    if (error) throw new Error(`Supabase deleteLead epäonnistui: ${error.message}`);
+
+    const deleted = (data ?? []) as Array<{ id: string }>;
+    if (deleted.length === 0) {
+      throw new Error(
+        'Liidin poisto estyi (0 riviä poistettu). Lisää Supabaseen DELETE policy (business_id = auth.uid()) ja varmista että authenticated-roolilla on DELETE-grant.'
+      );
     }
   }
 }

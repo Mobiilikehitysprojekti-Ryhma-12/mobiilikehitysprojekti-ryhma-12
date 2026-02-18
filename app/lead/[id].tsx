@@ -29,7 +29,25 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { Alert, Platform, StyleSheet } from 'react-native';
+
+/**
+ * Webissä Alert.alert ei toimi (React Native Web tukee sitä vain osittain).
+ * Tämä helper käyttää webissä window.confirm/window.alert ja natiivilla Alert.alert.
+ */
+function confirmAction(title: string, message: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') {
+    // window.confirm palauttaa boolean synkronisesti.
+    if (window.confirm(`${title}\n\n${message}`)) {
+      onConfirm();
+    }
+  } else {
+    Alert.alert(title, message, [
+      { text: 'Peruuta', style: 'cancel' },
+      { text: 'Vahvista', style: 'destructive', onPress: onConfirm },
+    ]);
+  }
+}
 
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
@@ -134,31 +152,31 @@ export default function LeadDetailScreen() {
   const handleHideLead = useCallback(() => {
     if (!lead) return;
 
-    Alert.alert(
+    // Webissä Alert.alert ei toimi -> käytetään confirmAction-helperia.
+    confirmAction(
       'Piilota tarjouspyyntö?',
-      'Piilotettu tarjouspyyntö poistuu listasta. Tätä ei voi palauttaa sovelluksesta ilman erillistä toimintoa.',
-      [
-        { text: 'Peruuta', style: 'cancel' },
-        {
-          text: 'Piilota',
-          style: 'destructive',
-          onPress: async () => {
-            setIsManageUpdating(true);
-            setManageError(null);
-            try {
-              await repo.hideLead(lead.id);
-              await removeLeadFromCachedList(lead.id);
-              router.back();
-            } catch (error: unknown) {
-              console.error('LeadDetail: hideLead epäonnistui', error);
-              const message = error instanceof Error ? error.message : 'Virhe liidin piilottamisessa';
-              setManageError(message);
-            } finally {
-              setIsManageUpdating(false);
-            }
-          },
-        },
-      ]
+      'Piilotettu tarjouspyyntö poistuu listasta. Voit palauttaa sen Asetuksista kohdasta "Piilotetut tarjouspyynnöt".',
+      async () => {
+        setIsManageUpdating(true);
+        setManageError(null);
+        try {
+          await repo.hideLead(lead.id);
+          await removeLeadFromCachedList(lead.id);
+          router.back();
+        } catch (error: unknown) {
+          console.error('LeadDetail: hideLead epäonnistui', error);
+          const message = error instanceof Error ? error.message : 'Virhe liidin piilottamisessa';
+          setManageError(message);
+          // Webissä window.alert, natiivilla Alert.alert.
+          if (Platform.OS === 'web') {
+            window.alert(`Virhe: ${message}`);
+          } else {
+            Alert.alert('Virhe', message);
+          }
+        } finally {
+          setIsManageUpdating(false);
+        }
+      }
     );
   }, [lead, repo, router]);
 
@@ -171,31 +189,31 @@ export default function LeadDetailScreen() {
   const handleDeleteLead = useCallback(() => {
     if (!lead) return;
 
-    Alert.alert(
+    // Webissä Alert.alert ei toimi -> käytetään confirmAction-helperia.
+    confirmAction(
       'Poista tarjouspyyntö pysyvästi?',
       'Tämä poistaa tarjouspyynnön tietokannasta. Toimintoa ei voi perua.',
-      [
-        { text: 'Peruuta', style: 'cancel' },
-        {
-          text: 'Poista',
-          style: 'destructive',
-          onPress: async () => {
-            setIsManageUpdating(true);
-            setManageError(null);
-            try {
-              await repo.deleteLead(lead.id);
-              await removeLeadFromCachedList(lead.id);
-              router.back();
-            } catch (error: unknown) {
-              console.error('LeadDetail: deleteLead epäonnistui', error);
-              const message = error instanceof Error ? error.message : 'Virhe liidin poistamisessa';
-              setManageError(message);
-            } finally {
-              setIsManageUpdating(false);
-            }
-          },
-        },
-      ]
+      async () => {
+        setIsManageUpdating(true);
+        setManageError(null);
+        try {
+          await repo.deleteLead(lead.id);
+          await removeLeadFromCachedList(lead.id);
+          router.back();
+        } catch (error: unknown) {
+          console.error('LeadDetail: deleteLead epäonnistui', error);
+          const message = error instanceof Error ? error.message : 'Virhe liidin poistamisessa';
+          setManageError(message);
+          // Webissä window.alert, natiivilla Alert.alert.
+          if (Platform.OS === 'web') {
+            window.alert(`Virhe: ${message}`);
+          } else {
+            Alert.alert('Virhe', message);
+          }
+        } finally {
+          setIsManageUpdating(false);
+        }
+      }
     );
   }, [lead, repo, router]);
 

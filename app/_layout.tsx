@@ -16,6 +16,19 @@ import { RepoProvider } from '@/services/leads/RepoProvider';
 import { initNotifications, requestNotificationPermission } from '@/services/notifications/notificationService';
 import { QuoteProvider } from '@/services/quotes/QuoteProvider';
 
+// Web dev: react-navigation käyttää edelleen pointerEvents-proppia, ja react-native-web varoittaa siitä.
+// Suodatetaan vain tämä yksittäinen varoitus mahdollisimman aikaisin (ennen ensimmäistä renderiä).
+if (Platform.OS === 'web') {
+  const originalWarn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    const first = args[0];
+    if (typeof first === 'string' && first.includes('props.pointerEvents is deprecated')) {
+      return;
+    }
+    originalWarn(...(args as any[]));
+  };
+}
+
 /**
  * RootLayout (Expo Router)
  *
@@ -37,10 +50,35 @@ export const unstable_settings = {
 export default function RootLayout() {
   const router = useRouter();
   const colorScheme = useColorScheme();
+  const segments = useSegments();
 
   // Debug-flägit
   useEffect(() => {
     initDebugFlags();
+  }, []);
+
+  // Webissä React Navigation merkitsee taustaruudut aria-hidden="true"-attribuutilla.
+  // Jos fokusoitu elementti on tässä puussa, selain varoittaa "Blocked aria-hidden... retained focus".
+  // Korjaus: MutationObserver kuuntelee aria-hidden -muutoksia ja blurraa fokuksen välittömästi.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type !== 'attributes' || mutation.attributeName !== 'aria-hidden') continue;
+        const target = mutation.target as HTMLElement;
+        if (target.getAttribute('aria-hidden') !== 'true') continue;
+        const active = document.activeElement as HTMLElement | null;
+        if (active && target.contains(active)) {
+          // Elementti jäi fokukseen aria-hidden-alipuuhun -> blurrataan heti.
+          active.blur();
+        }
+      }
+    });
+
+    observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-hidden'] });
+
+    return () => observer.disconnect();
   }, []);
 
   // P0 #70 + #72: Notification setup + deep linking

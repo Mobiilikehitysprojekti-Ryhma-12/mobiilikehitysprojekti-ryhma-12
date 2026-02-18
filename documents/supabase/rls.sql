@@ -42,3 +42,16 @@ for update
 to authenticated
 using (business_id = auth.uid())
 with check (business_id = auth.uid());
+
+-- LEADS: authenticated saa poistaa vain omat
+drop policy if exists "leads: delete own" on public.leads;
+create policy "leads: delete own"
+on public.leads
+for delete
+to authenticated
+using (business_id = auth.uid());
+
+-- GRANTit (demo): varmistetaan että rooleilla on tarvittavat oikeudet.
+-- Huom: RLS-policyt edelleen rajoittavat riveittäin.
+grant select, insert, update, delete on table public.leads to authenticated;
+grant insert on table public.leads to anon;
