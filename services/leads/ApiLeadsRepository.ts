@@ -81,6 +81,10 @@ export class ApiLeadsRepository implements LeadsRepository {
     }
   }
 
+  async listHiddenLeads(): Promise<Lead[]> {
+    throw new Error('ApiLeadsRepository.listHiddenLeads: ei vielä implementoitu');
+  }
+
   /**
    * Päivitä leads taustalla (ei estä UI:ta)
    * Käyttää NetInfo:a välttääkseen turhat API-kutsut offline-tilassa
@@ -160,5 +164,20 @@ export class ApiLeadsRepository implements LeadsRepository {
     // Placeholder for API integration
     // await patchJson(`/leads/${encodeURIComponent(leadId)}/status`, { status });
     throw new Error('ApiLeadsRepository.updateLeadStatus: ei vielä implementoitu');
+  }
+
+  async hideLead(leadId: string): Promise<void> {
+    // TODO: Implementoi kun backendissa on soft delete -tuki.
+    throw new Error('ApiLeadsRepository.hideLead: ei vielä implementoitu');
+  }
+
+  async unhideLead(leadId: string): Promise<void> {
+    // TODO: Implementoi kun backendissa on soft delete -tuki.
+    throw new Error('ApiLeadsRepository.unhideLead: ei vielä implementoitu');
+  }
+
+  async deleteLead(leadId: string): Promise<void> {
+    // TODO: Implementoi kun backendissa on DELETE /leads/:id.
+    throw new Error('ApiLeadsRepository.deleteLead: ei vielä implementoitu');
   }
 }

@@ -39,13 +39,25 @@ export type Lead = {
   createdAt: string;
 
   /** Asiakkaan nimi (valinnainen). */
-  customerName?: string;
+  customerName?: string | null;
+
+  /** Asiakkaan sähköposti (valinnainen). */
+  customerEmail?: string | null;
 
   /** Asiakkaan puhelin (valinnainen). */
-  customerPhone?: string;
+  customerPhone?: string | null;
 
   /** Omistava business/user id (RLS: business_id = auth.uid()). */
   businessId?: string;
+
+  /**
+   * Onko liidi piilotettu (soft delete).
+   *
+   * Miksi tämä kenttä:
+   * - Käyttäjä voi siivota Inboxia poistamatta dataa lopullisesti.
+   * - Piilotetut liidit suodatetaan pois listauksista repository-tasolla.
+   */
+  isHidden?: boolean;
 };
 
 /**

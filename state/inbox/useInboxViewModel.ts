@@ -9,7 +9,7 @@
  * - Repository voidaan injektoida (Fake/API) ilman UI-muutoksia.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Lead, LeadStatus } from '@/models/Lead';
 import { getDebugFlags, subscribeDebugFlags } from '@/services/debugFlags';
@@ -75,6 +75,7 @@ export function useInboxViewModel(repo: LeadsRepository) {
   const [filters, setFilters] = useState<InboxFilters>({ query: '', status: 'all' });
 
   const [rawItems, setRawItems] = useState<Lead[]>([]);
+  const rawItemsRef = useRef<Lead[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -84,6 +85,15 @@ export function useInboxViewModel(repo: LeadsRepository) {
   const [isOffline, setIsOffline] = useState<boolean>(__DEV__ ? getDebugFlags().simulateOffline : false);
 
   const filteredItems = useMemo(() => applyFilters(rawItems, filters), [rawItems, filters]);
+
+  // Tärkeää: pidetään viimeisin rawItems refissä.
+  // Miksi? refreshNetwork tarvitsee "vanhan" listan (uudet liidit -> notifikaatiot),
+  // mutta jos refreshNetwork riippuisi rawItems-statesta, sen identiteetti vaihtuu jokaisella
+  // setRawItems-kutsulla. Tällöin myös aloitus-useEffect (joka riippuu refreshNetwork:sta)
+  // voi jäädä ikilooppiin -> "Maximum update depth exceeded".
+  useEffect(() => {
+    rawItemsRef.current = rawItems;
+  }, [rawItems]);
 
   // Päivitä offline-tila debug-flageista (demo: simulateOffline ON => offline vaikka laite olisi online)
   useEffect(() => {
@@ -102,7 +112,7 @@ export function useInboxViewModel(repo: LeadsRepository) {
 
       try {
         // Tallenna vanhat lead ID:t ennen refreshiä
-        const oldLeadIds = new Set(rawItems.map((lead) => lead.id));
+        const oldLeadIds = new Set(rawItemsRef.current.map((lead) => lead.id));
 
         const items = await repo.listLeads();
         
@@ -133,7 +143,7 @@ export function useInboxViewModel(repo: LeadsRepository) {
         if (showLoading) setIsLoading(false);
       }
     },
-    [isOffline, repo, rawItems]
+    [isOffline, repo]
   );
 
   const refresh = useCallback(async () => {

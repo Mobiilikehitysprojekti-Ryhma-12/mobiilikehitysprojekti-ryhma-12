@@ -40,6 +40,28 @@ This repo contains a first demo version with:
 2. Type in search or change status → list filters → empty state appears when no matches
 3. Tap an item → opens lead detail
 
+### Share/QR: jaa asiakaslinkki (Settings → /share)
+
+Appissa on P0-demoa varten ruutu, jossa yrittäjä voi jakaa asiakaslinkin helposti:
+
+- Reitti: `app/share.tsx`
+- Avaa: **Asetukset**-tab → **Jaa yrityksen linkki (QR)**
+- Näyttää: linkki + QR-koodi + yrityksen nimi/puhelin/sähköposti
+- “Jaa linkki” avaa natiivin share-sheetin (iOS/Android)
+- “Jaa QR kuvana (PNG)” generoi PNG:n ja avaa share-sheetin (iOS/Android)
+- “Tallenna QR (PNG)” tallentaa QR-kuvan galleriaan (iOS/Android)
+
+### Tarjous: asiakkaan yhteystiedot + vastaa sähköpostilla
+
+Tarjousnäkymässä (`/lead/[id]/quote`) näytetään asiakkaan yhteystiedot ja P0-toiminnot:
+
+- “Vastaa sähköpostilla” (avaa laitteen sähköpostisovelluksen `mailto:`-linkillä, valmiilla aiheella + viestipohjalla)
+- “Soita” (tel:)
+
+Huom:
+- Jos laitteessa ei ole käytettävää sähköpostisovellusta, appi näyttää virheilmoituksen.
+- Supabase-datan kanssa tarvitset `customer_email` sarakkeen `public.leads`-tauluun (katso [documents/supabase/schema.sql](documents/supabase/schema.sql)).
+
 ### Data source (Fake vs API)
 
 We use a Repository interface + Context “DI” (Hilt mindset in RN): UI never calls the low-level api client directly.
@@ -71,7 +93,14 @@ This app includes a minimal email+password authentication flow using Supabase.
    - `EXPO_PUBLIC_SUPABASE_URL` (Project Settings → API → Project URL)
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY` (Project Settings → API → Project API keys → anon public)
 
-3. Restart Expo after changing env vars:
+3. (Optional, demo) Fill in Share/QR values:
+
+   - `EXPO_PUBLIC_CUSTOMER_URL` (asiakkaalle jaettava web-linkki)
+   - `EXPO_PUBLIC_BUSINESS_NAME`
+   - `EXPO_PUBLIC_BUSINESS_PHONE`
+   - `EXPO_PUBLIC_BUSINESS_EMAIL`
+
+4. Restart Expo after changing env vars:
 
    ```bash
    npx expo start -c

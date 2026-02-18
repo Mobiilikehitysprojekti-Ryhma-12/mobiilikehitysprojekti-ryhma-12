@@ -27,26 +27,33 @@
 
 
 import { useFocusEffect } from '@react-navigation/native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { ErrorCard } from '@/components/ui/ErrorCard';
 import { InboxSkeleton } from '@/components/ui/InboxSkeleton';
 import { LeadDetailView } from '@/components/ui/LeadDetailView';
 import type { Lead, LeadStatus } from '@/models/Lead';
 import { useLeadsRepo } from '@/services/leads/RepoProvider';
+import { removeLeadFromCachedList } from '@/services/leads/leadsCache';
 
 export default function LeadDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const repo = useLeadsRepo();
+  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lead, setLead] = useState<Lead | null>(null);
   const [isStatusUpdating, setIsStatusUpdating] = useState<boolean>(false);
   const [statusUpdateError, setStatusUpdateError] = useState<string | null>(null);
+
+  const [isManageUpdating, setIsManageUpdating] = useState<boolean>(false);
+  const [manageError, setManageError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     // Miksi guard: jos route-parametri puuttuu, ei kutsuta repositorya turhaan.
@@ -118,6 +125,80 @@ export default function LeadDetailScreen() {
     [lead, repo]
   );
 
+  /**
+   * Piilota liidi: poistuu Inboxista, mutta säilyy tietokannassa.
+   *
+   * Miksi confirm:
+   * - Piilotus on käyttäjälle "siivous"-toiminto, mutta se vaikuttaa listaukseen heti.
+   */
+  const handleHideLead = useCallback(() => {
+    if (!lead) return;
+
+    Alert.alert(
+      'Piilota tarjouspyyntö?',
+      'Piilotettu tarjouspyyntö poistuu listasta. Tätä ei voi palauttaa sovelluksesta ilman erillistä toimintoa.',
+      [
+        { text: 'Peruuta', style: 'cancel' },
+        {
+          text: 'Piilota',
+          style: 'destructive',
+          onPress: async () => {
+            setIsManageUpdating(true);
+            setManageError(null);
+            try {
+              await repo.hideLead(lead.id);
+              await removeLeadFromCachedList(lead.id);
+              router.back();
+            } catch (error: unknown) {
+              console.error('LeadDetail: hideLead epäonnistui', error);
+              const message = error instanceof Error ? error.message : 'Virhe liidin piilottamisessa';
+              setManageError(message);
+            } finally {
+              setIsManageUpdating(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [lead, repo, router]);
+
+  /**
+   * Poista liidi pysyvästi: poistuu tietokannasta.
+   *
+   * Miksi confirm:
+   * - Tämä on peruuttamaton toimenpide.
+   */
+  const handleDeleteLead = useCallback(() => {
+    if (!lead) return;
+
+    Alert.alert(
+      'Poista tarjouspyyntö pysyvästi?',
+      'Tämä poistaa tarjouspyynnön tietokannasta. Toimintoa ei voi perua.',
+      [
+        { text: 'Peruuta', style: 'cancel' },
+        {
+          text: 'Poista',
+          style: 'destructive',
+          onPress: async () => {
+            setIsManageUpdating(true);
+            setManageError(null);
+            try {
+              await repo.deleteLead(lead.id);
+              await removeLeadFromCachedList(lead.id);
+              router.back();
+            } catch (error: unknown) {
+              console.error('LeadDetail: deleteLead epäonnistui', error);
+              const message = error instanceof Error ? error.message : 'Virhe liidin poistamisessa';
+              setManageError(message);
+            } finally {
+              setIsManageUpdating(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [lead, repo, router]);
+
   const interimTitle = id ? `Lead ${id}` : 'Lead';
 
 
@@ -162,6 +243,27 @@ export default function LeadDetailScreen() {
           isStatusUpdating={isStatusUpdating}
           statusUpdateError={statusUpdateError}
         />
+
+        {/*
+          Hallinta:
+          - Piilota = soft delete (poistuu Inboxista)
+          - Poista = hard delete (poistuu tietokannasta)
+        */}
+        <Card style={styles.manageCard}>
+          <Button
+            title={isManageUpdating ? 'Käsitellään...' : 'Piilota tarjouspyyntö'}
+            onPress={handleHideLead}
+            disabled={isManageUpdating}
+            loading={isManageUpdating}
+          />
+          <Button
+            title={isManageUpdating ? 'Käsitellään...' : 'Poista tarjouspyyntö'}
+            onPress={handleDeleteLead}
+            disabled={isManageUpdating}
+            loading={isManageUpdating}
+          />
+          {manageError ? <ErrorCard message={manageError} onRetry={() => setManageError(null)} /> : null}
+        </Card>
       </ThemedView>
     </>
   );
@@ -172,6 +274,10 @@ const styles = StyleSheet.create({
     flex: 1,
     //padding: 16,
     //gap: 10,
+  },
+  manageCard: {
+    margin: 16,
+    gap: 10,
   },
   //meta: {
   //  opacity: 0.8,

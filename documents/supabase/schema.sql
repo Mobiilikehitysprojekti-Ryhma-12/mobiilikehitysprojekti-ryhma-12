@@ -55,14 +55,26 @@ create table if not exists public.leads (
     check (status in ('new','quoted','accepted','rejected')),
 
   customer_name text null,
+  customer_email text null,
   customer_phone text null,
 
   address text null,
   lat double precision null,
   lng double precision null,
 
+  -- Soft delete / piilotus: piilotetut liidit suodatetaan pois listauksista.
+  is_hidden boolean not null default false,
+
   created_at timestamptz not null default now()
 );
+
+-- MIGRAATIO (ajetaan vain olemassa olevaan kantaan tarvittaessa)
+-- Miksi mukana dokumentissa:
+-- - Sprinttien aikana skeema elää, ja tämä helpottaa tiimin yhteistä “source of truth” -ajattelua.
+-- - Asiakkaan sähköposti tarvitaan tarjouksen yhteydessä (vastaa sähköpostilla).
+--
+-- alter table public.leads
+--   add column if not exists customer_email text null;
 
 create index if not exists leads_business_id_idx on public.leads (business_id);
 create index if not exists leads_business_created_idx on public.leads (business_id, created_at desc);

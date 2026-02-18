@@ -8,12 +8,17 @@ Tämä kansio sisältää **todistusaineiston** siitä, mitä Supabaseen on teht
 - `rls.sql` — RLS päälle + policyt (anon insert, authenticated own select/update)
 - `smoke_tests.sql` — SQL Editorissa ajettavat smoke testit (demo-proof)
 
+Päivitykset:
+- `schema.sql` sisältää myös `customer_email` sarakkeen `public.leads`-tauluun (tarjousnäkymän “vastaa sähköpostilla” -toimintoa varten).
+
 ## Ajaminen (Supabase Dashboard)
 
 1. Supabase Dashboard → **SQL Editor**
 2. Aja ensin `schema.sql`
 3. Aja sitten `rls.sql`
 4. Aja lopuksi `smoke_tests.sql`
+
+Jos teillä on jo olemassa oleva kanta, riittää usein että ajatte `schema.sql`:n migraatiopätkän (ALTER TABLE … ADD COLUMN), jotta `customer_email` tulee mukaan.
 
 ## Demo (mitä näytetään)
 

@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 /**
@@ -12,15 +11,41 @@ import { Platform } from 'react-native';
 
 let isInitialized = false;
 
+// Huom: emme importtaa expo-notifications -pakettia top-levelissä.
+// Miksi?
+// - Webissä paketti voi tulostaa varoituksia jo import-vaiheessa.
+// - P0-demossa webille riittää “ei tee mitään” + ei virhespämmiä.
+// - Natiivissa haluamme edelleen käyttää expo-notificationsia normaalisti.
+type NotificationsModule = typeof import('expo-notifications');
+let notificationsModule: NotificationsModule | null = null;
+
+async function getNotifications(): Promise<NotificationsModule> {
+  if (notificationsModule) return notificationsModule;
+  notificationsModule = await import('expo-notifications');
+  return notificationsModule;
+}
+
+function isWeb(): boolean {
+  return Platform.OS === 'web';
+}
+
 /**
  * Alusta notification handler
  * Kutsu tämä kerran app-startupin yhteydessä (esim. RootLayout useEffect)
  */
-export function initNotifications(): void {
+export async function initNotifications(): Promise<void> {
+  // Webissä expo-notifications on osittain tuettu ja osa API:sta (esim. scheduleNotificationAsync)
+  // ei ole saatavilla. P0-demossa riittää että web ei kaadu tai spämmää virheitä.
+  if (isWeb()) {
+    return;
+  }
+
   if (isInitialized) {
     console.log('⚠️ Notifications already initialized');
     return;
   }
+
+  const Notifications = await getNotifications();
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -41,7 +66,13 @@ export function initNotifications(): void {
  * P0 #70: expo-notifications setup + permission
  */
 export async function requestNotificationPermission(): Promise<boolean> {
+  // Webissä ei pyydetä natiivioikeuksia (ei hyötyä) -> palautetaan false hiljaisesti.
+  if (isWeb()) {
+    return false;
+  }
+
   try {
+    const Notifications = await getNotifications();
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
@@ -87,6 +118,11 @@ export async function triggerLeadNotification(
   leadId: string,
   customerName: string
 ): Promise<void> {
+  // Webissä local notification -ajastus ei ole käytettävissä -> ei tehdä mitään.
+  if (isWeb()) {
+    return;
+  }
+
   // Validoi input
   if (!leadId || !customerName) {
     console.error('❌ Invalid notification params:', { leadId, customerName });
@@ -99,6 +135,7 @@ export async function triggerLeadNotification(
   }
 
   try {
+    const Notifications = await getNotifications();
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: '🔔 Uusi liidi!',
@@ -123,6 +160,10 @@ export async function triggerLeadNotification(
  * P1 #73: Debug-nappi: "Trigger test notification"
  */
 export async function triggerTestNotification(): Promise<void> {
+  if (isWeb()) {
+    return;
+  }
+
   console.log('🧪 Triggering test notification...');
   await triggerLeadNotification('test-123', 'Test Customer Oy');
 }

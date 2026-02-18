@@ -6,6 +6,7 @@
  * - Logout, joka tyhjentää session ja ohjaa Login-ruutuun (AuthGate hoitaa ohjauksen)
  */
 
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -18,6 +19,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/services/auth/AuthProvider';
 
 export default function SettingsTab() {
+  const router = useRouter();
   const tint = useThemeColor({}, 'tint');
   const { user, signOut, isLoading, errorMessage } = useAuth();
 
@@ -41,6 +43,24 @@ export default function SettingsTab() {
         {errorMessage ? <ThemedText style={{ color: tint }}>{errorMessage}</ThemedText> : null}
 
         <View style={styles.actions}>
+          <Button
+            title="Jaa yrityksen linkki (QR)"
+            disabled={!user}
+            onPress={() => {
+              // Huom: käytetään omaa routea (app/share.tsx), jotta muutokset tab-navigaatioon pysyy minimissä.
+              // TypedRoutes voi olla eri tilanteissa tiukka, joten castataan any.
+              router.push('/share' as any);
+            }}
+          />
+
+          <Button
+            title="Piilotetut tarjouspyynnöt"
+            disabled={!user}
+            onPress={() => {
+              router.push('/hidden' as any);
+            }}
+          />
+
           <Button
             title="Kirjaudu ulos"
             loading={isLoading}
@@ -76,5 +96,6 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: 8,
     alignSelf: 'flex-start',
+    gap: 10,
   },
 });

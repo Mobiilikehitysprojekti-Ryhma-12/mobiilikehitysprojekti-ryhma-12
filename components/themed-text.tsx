@@ -16,7 +16,9 @@ import { Text, type TextProps } from 'react-native';
 import { useThemeColor } from '../hooks/use-theme-color';
 
 export interface ThemedTextProps extends TextProps {
-  type?: 'default' | 'title' | 'subtitle' | 'link';
+  // Huom: "defaultSemiBold" on Expo-starterista tuttu tyyli ja sitä käytetään mm. login-näkymässä.
+  // Lisätään se tähän, jotta tyyppitarkistus ja UI pysyvät linjassa.
+  type?: 'default' | 'defaultSemiBold' | 'title' | 'subtitle' | 'link';
 }
 
 /**
@@ -36,6 +38,7 @@ export function ThemedText({
       style={[
         { color },
         type === 'title' && { fontSize: 28, fontWeight: 'bold' },
+        type === 'defaultSemiBold' && { fontSize: 16, fontWeight: '600' },
         type === 'subtitle' && { fontSize: 16, fontWeight: '600' },
         type === 'link' && { color: '#0a7ea4' },
         style,

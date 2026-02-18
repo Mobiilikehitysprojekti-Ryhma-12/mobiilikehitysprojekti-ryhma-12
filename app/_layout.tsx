@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 
 // Supabase RN: URL + crypto polyfillit (tarvitaan usein @supabase/supabase-js:lle).
@@ -12,10 +13,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/services/auth/AuthProvider';
 import { initDebugFlags } from '@/services/debugFlags';
 import { RepoProvider } from '@/services/leads/RepoProvider';
-import { QuoteProvider } from '@/services/quotes/QuoteProvider';
-
-import * as Notifications from 'expo-notifications';
 import { initNotifications, requestNotificationPermission } from '@/services/notifications/notificationService';
+import { QuoteProvider } from '@/services/quotes/QuoteProvider';
 
 /**
  * RootLayout (Expo Router)
@@ -25,7 +24,7 @@ import { initNotifications, requestNotificationPermission } from '@/services/not
  * - `RepoProvider` injektoi leads-repositoryt (Fake/API) koko appiin (löyhä kytkentä).
  * - `QuoteProvider` injektoi quotes-repositoryt (Fake/API) koko appiin.
  * - `ThemeProvider` kytkee React Navigation -teeman (light/dark).
- * - `Stack` määrittelee pääreitit (tabs + login + modal).
+ * - `Stack` määrittelee pääreitit (tabs + login).
  * - `AuthGate` suojaa reitit: jos ei sessiota → login, jos sessio → (tabs).
  *
  * Tärkeä periaate: Providerit pidetään täällä, jotta yksittäiset screenit pysyy yksinkertaisina.
@@ -46,36 +45,53 @@ export default function RootLayout() {
 
   // P0 #70 + #72: Notification setup + deep linking
   useEffect(() => {
-    console.log('🔔 Initializing notifications...');
-    
-    // TÄRKEÄÄ: Alusta handler ensin
-    initNotifications();
-    
-    // Sitten pyydä oikeudet
-    requestNotificationPermission();
+    // Webissä expo-notifications ei tarjoa samaa natiivikäyttäytymistä.
+    // P0: tärkeintä on ettei web kaadu tai spämmää virheilmoituksia.
+    if (Platform.OS === 'web') {
+      return;
+    }
 
-    // Kuuntele kun käyttäjä klikkaa notifikaatiota
-    // P0 #72: Notif tap → deep link oikeaan liidiin
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data;
-        const url = data.url as string;
-        
-        console.log('🔗 Notification tapped, deep linking to:', url);
-        console.log('📦 Notification data:', data);
-        
-        if (url) {
-          // Pieni viive varmistaa että app on varmasti auki
-          setTimeout(() => {
-            router.push(url as any);
-          }, 100);
-        }
+    let cancelled = false;
+    let subscription: { remove: () => void } | null = null;
+
+    (async () => {
+      try {
+        console.log('🔔 Initializing notifications...');
+
+        // TÄRKEÄÄ: Alusta handler ensin
+        await initNotifications();
+
+        // Sitten pyydä oikeudet
+        await requestNotificationPermission();
+
+        // Kuuntele kun käyttäjä klikkaa notifikaatiota
+        // P0 #72: Notif tap → deep link oikeaan liidiin
+        const Notifications = await import('expo-notifications');
+        if (cancelled) return;
+
+        subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data;
+          const url = data.url as string;
+
+          console.log('🔗 Notification tapped, deep linking to:', url);
+          console.log('📦 Notification data:', data);
+
+          if (url) {
+            // Pieni viive varmistaa että app on varmasti auki
+            setTimeout(() => {
+              router.push(url as any);
+            }, 100);
+          }
+        });
+      } catch (error: unknown) {
+        // P0: notifikaatiot eivät saa kaataa appia.
+        console.error('❌ Notification init failed', error);
       }
-    );
+    })();
 
     return () => {
-      console.log('🧹 Cleaning up notification listener');
-      subscription.remove();
+      cancelled = true;
+      subscription?.remove();
     };
   }, [router]);
 
@@ -88,7 +104,6 @@ export default function RootLayout() {
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             </Stack>
             <StatusBar style="auto" />
           </ThemeProvider>

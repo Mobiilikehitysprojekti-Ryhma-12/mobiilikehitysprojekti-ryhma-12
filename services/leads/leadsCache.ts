@@ -45,3 +45,45 @@ export async function clearLeadsCache(): Promise<void> {
   const leadKeys = keys.filter((k) => k.startsWith('qf:lead:'));
   await AsyncStorage.multiRemove([LEADS_LIST_KEY, LEADS_LAST_SYNCED_KEY, ...leadKeys]).catch(() => undefined);
 }
+
+/**
+ * Poistaa yhden liidin cached-listasta.
+ *
+ * Miksi tämä tarvitaan:
+ * - Kun liidi piilotetaan/poistetaan, käyttäjä odottaa että se katoaa UI:sta heti.
+ * - Inbox voi näyttää cache-dataa (offline / välimuisti), joten listaa pitää päivittää myös cacheen.
+ */
+export async function removeLeadFromCachedList(leadId: string): Promise<void> {
+  try {
+    const rawItems = await AsyncStorage.getItem(LEADS_LIST_KEY);
+    if (!rawItems) return;
+
+    const parsed = JSON.parse(rawItems) as unknown;
+    if (!Array.isArray(parsed)) return;
+
+    const next = (parsed as Lead[]).filter((l) => l?.id !== leadId);
+    await AsyncStorage.setItem(LEADS_LIST_KEY, JSON.stringify(next));
+  } catch {
+    // Best-effort: jos cache päivitys epäonnistuu, ei kaadeta UI:ta.
+  }
+}
+
+/**
+ * Lisää tai päivittää liidin cached-listaan.
+ *
+ * Miksi:
+ * - Kun liidi palautetaan (unhide), käyttäjä odottaa että se näkyy heti Inboxissa.
+ * - Inbox voi käyttää cachea (offline / välimuisti), joten listaan pitää tehdä upsert.
+ */
+export async function upsertLeadInCachedList(lead: Lead): Promise<void> {
+  try {
+    const rawItems = await AsyncStorage.getItem(LEADS_LIST_KEY);
+    const parsed = rawItems ? (JSON.parse(rawItems) as unknown) : null;
+    const items = Array.isArray(parsed) ? (parsed as Lead[]) : [];
+
+    const next = [lead, ...items.filter((l) => l?.id !== lead.id)];
+    await AsyncStorage.setItem(LEADS_LIST_KEY, JSON.stringify(next));
+  } catch {
+    // Best-effort.
+  }
+}

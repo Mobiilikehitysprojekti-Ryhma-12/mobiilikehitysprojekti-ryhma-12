@@ -24,6 +24,11 @@ export class DebugLeadsRepository implements LeadsRepository {
     return this.inner.listLeads();
   }
 
+  async listHiddenLeads(): Promise<Lead[]> {
+    this.maybeThrow();
+    return this.inner.listHiddenLeads();
+  }
+
   async getLeadById(id: string): Promise<Lead | null> {
     this.maybeThrow();
     return this.inner.getLeadById(id);
@@ -32,5 +37,20 @@ export class DebugLeadsRepository implements LeadsRepository {
   async updateLeadStatus(leadId: string, status: 'new' | 'quoted' | 'accepted' | 'rejected'): Promise<void> {
     this.maybeThrow();
     return this.inner.updateLeadStatus(leadId, status);
+  }
+
+  async hideLead(leadId: string): Promise<void> {
+    this.maybeThrow();
+    return this.inner.hideLead(leadId);
+  }
+
+  async unhideLead(leadId: string): Promise<void> {
+    this.maybeThrow();
+    return this.inner.unhideLead(leadId);
+  }
+
+  async deleteLead(leadId: string): Promise<void> {
+    this.maybeThrow();
+    return this.inner.deleteLead(leadId);
   }
 }

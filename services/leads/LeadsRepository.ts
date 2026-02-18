@@ -18,6 +18,14 @@ export interface LeadsRepository {
   listLeads(): Promise<Lead[]>;
 
   /**
+   * Palauttaa piilotetut liidit (soft delete).
+   *
+   * Käyttö:
+   * - "Piilotetut tarjouspyynnöt" -näkymä, jossa käyttäjä voi palauttaa tai poistaa liidejä.
+   */
+  listHiddenLeads(): Promise<Lead[]>;
+
+  /**
    * Palauttaa yhden liidin id:n perusteella.
    *
    * Palautetaan `null`, jos liidiä ei löydy.
@@ -33,4 +41,26 @@ export interface LeadsRepository {
    * @param status - Uusi status
    */
   updateLeadStatus(leadId: string, status: LeadStatus): Promise<void>;
+
+  /**
+   * Piilottaa liidin (soft delete).
+   *
+   * Tavoite:
+   * - Liidi poistuu Inbox/UI:sta
+   * - Data säilyy tietokannassa (audit / palautus myöhemmin mahdollinen)
+   */
+  hideLead(leadId: string): Promise<void>;
+
+  /**
+   * Palauttaa piilotetyn liidin takaisin näkyviin.
+   */
+  unhideLead(leadId: string): Promise<void>;
+
+  /**
+   * Poistaa liidin pysyvästi (hard delete).
+   *
+   * Huom:
+   * - Tätä ei voi palauttaa ilman varmuuskopioita.
+   */
+  deleteLead(leadId: string): Promise<void>;
 }
