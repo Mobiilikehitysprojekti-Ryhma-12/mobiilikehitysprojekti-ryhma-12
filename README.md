@@ -1,4 +1,4 @@
-Advanced mobile [video]([https://expo.dev](https://youtu.be/WhM9XFqxKnc))
+[Advanced mobile video](https://youtu.be/WhM9XFqxKnc)
 
 
 # Welcome to your Expo app 👋
