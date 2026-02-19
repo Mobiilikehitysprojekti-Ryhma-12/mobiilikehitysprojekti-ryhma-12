@@ -42,16 +42,16 @@ Tavoitteena on pitää UI ohuehkona, logiikka testattavana ja datalähde vaihdet
 
 ```mermaid
 flowchart TD
-  A[Käyttäjä UI:ssa] --> B[Screen / UI-komponentti]
-  B --> C[ViewModel-hook state/*]
-  C --> D[Repository-rajapinta]
-  D --> E1[ApiRepository]
-  D --> E2[FakeRepository]
-  D --> E3[SupabaseRepository]
-  E1 --> F[apiClient / verkkokutsu]
-  E1 --> G[Cache (AsyncStorage)]
+  A["Kayttaja UI"] --> B["Screen tai UI komponentti"]
+  B --> C["ViewModel hook state"]
+  C --> D["Repository rajapinta"]
+  D --> E1["ApiRepository"]
+  D --> E2["FakeRepository"]
+  D --> E3["SupabaseRepository"]
+  E1 --> F["apiClient verkkokutsu"]
+  E1 --> G["Cache AsyncStorage"]
   E2 --> G
-  E3 --> H[Supabase]
+  E3 --> H["Supabase"]
   F --> C
   G --> C
   H --> C
