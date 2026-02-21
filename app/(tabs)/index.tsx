@@ -43,11 +43,15 @@ export default function InboxTab() {
   }, []);
   // ===== END #43 =====
 
-  // Lataa data kun tab tulee fokukseen (esim. kun palataan takaisin toisesta näkymästä)
+  // Lataa data kun tab tulee fokukseen (esim. kun palataan takaisin toisesta näkymästä).
+  // Huom: riippuvuudeksi asetetaan vm.refresh eikä vm-objektia kokonaisuutena.
+  // vm on uusi objekti joka renderillä, mutta vm.refresh on stabiili useCallback —
+  // koko vm:n käyttö riippuvuutena aiheuttaisi infinitiivilooppia (Maximum update depth exceeded).
+  const { refresh } = vm;
   useFocusEffect(
     useCallback(() => {
-      vm.refresh();
-    }, [vm])
+      refresh();
+    }, [refresh])
   );
 
   // Pull-to-refresh handler
